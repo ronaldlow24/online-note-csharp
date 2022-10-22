@@ -1,18 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OnlineNote.Common;
 using OnlineNote.Models;
-using System.Diagnostics;
+using OnlineNote.Repository;
 
 namespace OnlineNote.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly HomeRepository homeRepository;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController()
         {
-            _logger = logger;
+            homeRepository = new HomeRepository();
         }
 
+        [SessionChecker]
         public IActionResult Index()
         {
             return View();
@@ -23,10 +25,31 @@ namespace OnlineNote.Controllers
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        [HttpPost]
+        public async Task<Account> Login(Account account)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            try
+            {
+                return await homeRepository.LoginAsync(account, HttpContext.Session);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [HttpPost]
+        public bool Logout()
+        {
+            try
+            {
+                HttpContext.Session.Clear();
+                return true;
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }
