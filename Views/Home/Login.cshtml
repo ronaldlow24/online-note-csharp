@@ -8,7 +8,7 @@
                     <h3 class="card-title text-center mb-3 fw-light">
                         Login
                     </h3>
-                    <form>
+                    <form id="loginForm">
                         <div class="form-floating mb-3">
                             <input
                                 type="text"
@@ -47,3 +47,30 @@
         </div>
     </div>
 </div>
+
+
+
+@section Scripts {
+    <script>
+        $("#loginForm").submit(async function (event) {
+            event.preventDefault();
+            const Name = $("#nameInput").val()
+            const SecretPhase = $("#passwordInput").val()
+            const account = { Name : Name, SecretPhase: SecretPhase }
+            try{
+                await fetch('@Url.Action("Login", "Home")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(account)
+                })
+
+                location.reload();
+            }
+            catch{
+                alert("ERROR")
+            }
+        });
+    </script>
+}

@@ -26,7 +26,7 @@ namespace OnlineNote.Controllers
         }
 
         [HttpPost]
-        public async Task<Account> Login(Account account)
+        public async Task<Account> Login([FromBody] Account account)
         {
             try
             {
