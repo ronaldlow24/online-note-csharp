@@ -13,8 +13,11 @@ namespace OnlineNote.Entities
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                @"Server=(localdb)\mssqllocaldb;Database=Blogging;Trusted_Connection=True");
+            //optionsBuilder.UseSqlServer(
+            //    @"Server=(localdb)\mssqllocaldb;Database=Blogging;Trusted_Connection=True");
+
+            optionsBuilder.UseNpgsql(
+               @"Host=db.bit.io;Database=ronaldlow24/online-note;Username=ronaldlow24;Password=v2_3v49k_dVBRqDqpkedU8WguWgjdy9n");
         }
     }
 }
