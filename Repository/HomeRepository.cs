@@ -2,13 +2,14 @@
 using OnlineNote.Common;
 using OnlineNote.Entities;
 using OnlineNote.Models;
+using System.Security.Principal;
 using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Repository
 {
     public class HomeRepository
     {
-        public async Task<Account> LoginAsync(Account account, ISession session)
+        internal async Task<Account> LoginAsync(Account account, ISession session)
         {
             try
             {
@@ -17,7 +18,7 @@ namespace OnlineNote.Repository
                 if(accountEntity is not null)
                 {
                     account = CustomMapper.MapperObject.Map<Account>(accountEntity);
-                    var noteEntities = await db.Note.Where(a => a.AccountId == accountEntity.Id).ToListAsync();
+                    var noteEntities = await db.Note.Where(a => a.AccountId == accountEntity.Id).AsNoTracking().ToListAsync();
                     account.Note = CustomMapper.MapperObject.Map<List<Note>>(noteEntities); 
                 }
 
@@ -25,6 +26,23 @@ namespace OnlineNote.Repository
                 session.SetInt32(SessionString.AccountId, account.Id);
                 session.SetString(SessionString.AccountName, account.Name);
 
+                return account;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        internal async Task<Account> GetAccountAsync(int accountId)
+        {
+            try
+            {
+                using var db = new DataContext();
+                var accountEntity = await db.Account.FirstAsync(a => a.Id == accountId);
+                var account = CustomMapper.MapperObject.Map<Account>(accountEntity);
+                var noteEntities = await db.Note.Where(a => a.AccountId == accountEntity.Id).AsNoTracking().ToListAsync();
+                account.Note = CustomMapper.MapperObject.Map<List<Note>>(noteEntities);
                 return account;
             }
             catch

@@ -2,6 +2,7 @@
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
+using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Controllers
 {
@@ -15,9 +16,11 @@ namespace OnlineNote.Controllers
         }
 
         [SessionChecker]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var account = await homeRepository.GetAccountAsync(accountId);
+            return View(account);
         }
 
         public IActionResult Login()

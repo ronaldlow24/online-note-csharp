@@ -1,8 +1,51 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@model OnlineNote.Models.Account
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#" id="homeBtn">Home</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+               @* <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                </li>*@
+              
+            </ul>
+            <span class="navbar-text">
+                <button class="btn btn-outline-danger" type="button" id="logoutBtn">Logout</button>
+            </span>
+        </div>
+    </div>
+</nav>
+
+<div>
+    <button class="btn btn-outline-success" type="button" id="addNewNoteBtn">ADD NOTE</button>
+</div>
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+@section Scripts {
+    <script>
+        $("#logoutBtn").click(async function (event) {
+            try {
+                await fetch('@Url.Action("Logout", "Home")', {
+                    method: 'POST',
+                })
+                location.reload();
+            }
+            catch {
+                alert("ERROR")
+            }
+        });
+
+        $("#homeBtn").click(function (event) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+    </script>
+}
