@@ -15,6 +15,7 @@
                                 class="form-control"
                                 name="nameInput"
                                 id="nameInput"
+                                maxlength="180"
                                 required
                             />
                             <label htmlFor="nameInput">
@@ -27,6 +28,7 @@
                                 class="form-control"
                                    name="passwordInput"
                                    id="passwordInput"
+                                   maxlength="180"
                                    required />
                             <label htmlFor="passwordInput">
                                 Password
@@ -66,7 +68,7 @@
                     body: JSON.stringify(account)
                 })
 
-                location.reload();
+                location.replace("@Url.Action("Index", "Home")");
             }
             catch{
                 alert("ERROR")

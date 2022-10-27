@@ -21,11 +21,18 @@ namespace OnlineNote.Repository
                     var noteEntities = await db.Note.Where(a => a.AccountId == accountEntity.Id).AsNoTracking().ToListAsync();
                     account.Note = CustomMapper.MapperObject.Map<List<Note>>(noteEntities); 
                 }
+                else
+                {
+                    accountEntity = CustomMapper.MapperObject.Map<AccountEntity>(account);
+                    await db.Account.AddAsync(accountEntity);
+                    await db.SaveChangesAsync();
+                    account = CustomMapper.MapperObject.Map<Account>(accountEntity);
+                }
 
                 session.Clear();
                 session.SetInt32(SessionString.AccountId, account.Id);
                 session.SetString(SessionString.AccountName, account.Name);
-
+                await session.CommitAsync();
                 return account;
             }
             catch

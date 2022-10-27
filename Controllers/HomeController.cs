@@ -25,6 +25,8 @@ namespace OnlineNote.Controllers
 
         public IActionResult Login()
         {
+
+
             return View();
         }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Common
 {
@@ -9,9 +10,7 @@ namespace OnlineNote.Common
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            //if there is no session whitch key is "register", user will not access to specified action and redirect to login page.
-
-            if(context.HttpContext.Session.IsAvailable)
+            if (!context.HttpContext.Session.GetInt32(SessionString.AccountId).HasValue)
             {
                 context.Result = new RedirectToActionResult("Login", "Home", null);
             }
