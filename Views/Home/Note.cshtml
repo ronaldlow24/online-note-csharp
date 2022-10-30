@@ -1,0 +1,26 @@
+﻿@model OnlineNote.Models.Note
+
+@await Html.PartialAsync("_Nav.cshtml")
+
+<br />
+<input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title"/>
+<br />
+<textarea type="text" placeholder="Content" class="form-control" id="content">
+    @Model.Content
+</textarea>
+
+@section Scripts {
+    <script>
+        $("#logoutBtn").click(async function (event) {
+            try {
+                await fetch('@Url.Action("Logout", "Home")', {
+                    method: 'POST',
+                })
+                location.reload();
+            }
+            catch {
+                alert("ERROR")
+            }
+        });
+    </script>
+}

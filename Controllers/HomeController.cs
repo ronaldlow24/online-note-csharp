@@ -23,10 +23,21 @@ namespace OnlineNote.Controllers
             return View(account);
         }
 
+        [SessionChecker]
+        public async Task<IActionResult> Note(int? Id)
+        {
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var account = await homeRepository.GetAccountAsync(accountId);
+
+            Note? note = null;
+            if (Id is not null)
+                note = account.Note.First(s => s.Id == Id);
+
+            return View(note);
+        }
+
         public IActionResult Login()
         {
-
-
             return View();
         }
 

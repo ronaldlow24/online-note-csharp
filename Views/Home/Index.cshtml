@@ -1,33 +1,23 @@
 ﻿@model OnlineNote.Models.Account
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#" id="homeBtn">Home</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarText">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-               @* <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                </li>*@
-              
-            </ul>
-            <span class="navbar-text">
-                <button class="btn btn-outline-danger" type="button" id="logoutBtn">Logout</button>
-            </span>
-        </div>
-    </div>
-</nav>
+@await Html.PartialAsync("_Nav.cshtml")
 
-<div>
-    <button class="btn btn-outline-success" type="button" id="addNewNoteBtn">ADD NOTE</button>
-</div>
-
+<br />
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <button class="btn btn-info" type="button" id="addNewNoteBtn">ADD NOTE +</button>
 </div>
+<br />
+
+@foreach(var item in Model.Note)
+{
+    <div style="display:flex;">
+        <span>@item.Title</span>
+
+        <button class="btn btn-outline-primary editNoteButton" note-id="@item.Id" type="button">EDIT</button>
+        <button class="btn btn-outline-danger deleteNoteButton" note-id="@item.Id" type="button">DELETE</button>
+    </div>
+}
+
 
 @section Scripts {
     <script>
