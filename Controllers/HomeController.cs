@@ -29,7 +29,7 @@ namespace OnlineNote.Controllers
             var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
             var account = await homeRepository.GetAccountAsync(accountId);
 
-            Note? note = null;
+            Note note = new Note();
             if (Id is not null)
                 note = account.Note.First(s => s.Id == Id);
 

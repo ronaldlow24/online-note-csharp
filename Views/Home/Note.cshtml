@@ -1,22 +1,30 @@
 ﻿@model OnlineNote.Models.Note
 
-@await Html.PartialAsync("_Nav.cshtml")
+@await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
-<br />
-<input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title"/>
-<br />
-<textarea type="text" placeholder="Content" class="form-control" id="content">
-    @Model.Content
-</textarea>
+<div class="container">
+    <br />
+    <input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title" />
+    <br />
+    <textarea type="text" placeholder="Content" class="form-control" id="content" style="height: 65vh;">@Model.Content</textarea>
+</div>
+
 
 @section Scripts {
     <script>
-        $("#logoutBtn").click(async function (event) {
+        $("#title, #content").on("input", function (event) {
             try {
-                await fetch('@Url.Action("Logout", "Home")', {
+                const title = $("#title").val()
+                const content = $("#content").val()
+                const data = { Title: title, Content: content }
+
+                await fetch('@Url.Action("PostNote", "Home")', {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 })
-                location.reload();
             }
             catch {
                 alert("ERROR")

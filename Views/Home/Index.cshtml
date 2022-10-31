@@ -1,6 +1,6 @@
 ﻿@model OnlineNote.Models.Account
 
-@await Html.PartialAsync("_Nav.cshtml")
+@await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
 <br />
 <div class="text-center">
@@ -21,20 +21,12 @@
 
 @section Scripts {
     <script>
-        $("#logoutBtn").click(async function (event) {
-            try {
-                await fetch('@Url.Action("Logout", "Home")', {
-                    method: 'POST',
-                })
-                location.reload();
-            }
-            catch {
-                alert("ERROR")
-            }
-        });
-
         $("#homeBtn").click(function (event) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        $("#addNewNoteBtn").click(function (event) {
+            window.location.href = "@Url.Action("Note", "Home")";
         });
 
     </script>

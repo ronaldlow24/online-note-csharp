@@ -1,6 +1,6 @@
 ﻿<nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#" id="homeBtn">Home</a>
+        <a class="navbar-brand" href="@Url.Action("Index", "Home")" id="homeBtn">Home</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -8,8 +8,9 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             </ul>
             <span class="navbar-text">
-                <button class="btn btn-outline-danger" type="button" id="logoutBtn">Logout</button>
+                <button class="btn btn-outline-danger" type="button" id="logoutBtn" style="width:100%">Logout</button>
             </span>
         </div>
     </div>
 </nav>
+
