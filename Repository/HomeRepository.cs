@@ -57,5 +57,29 @@ namespace OnlineNote.Repository
                 throw;
             }
         }
+
+        internal async Task<bool> PostNoteAsync(Note note)
+        {
+            try
+            {
+                using var db = new DataContext();
+                var noteEntity = await db.Note.FirstOrDefaultAsync(a => a.AccountId == note.AccountId && a.Id == note.Id);
+                if(noteEntity is not null)
+                {
+                    noteEntity.Title = note.Title;
+                    noteEntity.Content = note.Content;
+                }
+                else
+                {
+                    noteEntity = CustomMapper.MapperObject.Map<NoteEntity>(note);
+                    await db.Note.AddAsync(noteEntity);
+                }
+                return await db.SaveChangesAsync() > 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 }

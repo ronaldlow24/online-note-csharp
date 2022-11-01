@@ -28,8 +28,8 @@ namespace OnlineNote.Controllers
         {
             var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
             var account = await homeRepository.GetAccountAsync(accountId);
-
-            Note note = new Note();
+            ViewBag.AccountId = accountId;
+            Note note = new();
             if (Id is not null)
                 note = account.Note.First(s => s.Id == Id);
 
@@ -47,6 +47,19 @@ namespace OnlineNote.Controllers
             try
             {
                 return await homeRepository.LoginAsync(account, HttpContext.Session);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [HttpPost]
+        public async Task<bool> PostNote([FromBody] Note note)
+        {
+            try
+            {
+                return await homeRepository.PostNoteAsync(note);
             }
             catch
             {
