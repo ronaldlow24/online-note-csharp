@@ -12,39 +12,46 @@
 
 @section Scripts {
     <script>
+        let noteId = @Model.Id
 
-        function debounce(func, timeout = 300){
-          let timer;
-          return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => { func.apply(this, args); }, timeout);
-          };
+        function debounce(callback, limit) {
+            console.log(limit)
+            let timeout;
+            return () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    callback();
+                }, limit);
+            };
         }
 
-        const saveNote = () => {
+        async function saveNote() {
             try {
-                const id = @Model.Id
-                        const accountId = @ViewBag.AccountId
-                        const title = $("#title").val()
+                const accountId = @ViewBag.AccountId
+                const title = $("#title").val()
                 const content = $("#content").val()
 
-                const data = { Id: id, Title: title, Content: content, AccountId: accountId }
-
-                await fetch('@Url.Action("PostNote", "Home")', {
+                const data = { Id: noteId, Title: title, Content: content, AccountId: accountId }
+                console.log(data)
+                const response = await fetch('@Url.Action("PostNote", "Home")', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 })
+                noteId = await response.text()
             }
             catch {
                 alert("ERROR")
             }
         }
 
-        $("#title, #content").on("input", function (event) {
-            debounce(() => saveNote());
+        const debouncedKeyPress = debounce(saveNote, 300);
+
+
+        $("#title, #content").on("input", async function (event) {
+            debouncedKeyPress()
         });
 
     </script>
