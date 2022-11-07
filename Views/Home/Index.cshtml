@@ -13,11 +13,10 @@
     <div style="display:flex;">
         <span>@item.Title</span>
 
-        <button class="btn btn-outline-primary editNoteButton" note-id="@item.Id" type="button">EDIT</button>
+        <a href="@Url.Action("Note", "Home")/@item.Id" class="btn btn-outline-primary">EDIT</a>
         <button class="btn btn-outline-danger deleteNoteButton" note-id="@item.Id" type="button">DELETE</button>
     </div>
 }
-
 
 @section Scripts {
     <script>
@@ -25,8 +24,46 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
-        $("#addNewNoteBtn").click(function (event) {
-            window.location.href = "@Url.Action("Note", "Home")";
+        $("#addNewNoteBtn").click(async function (event) {
+            try {
+                $("#spinner-div").css('display', 'flex');
+
+                const response = await fetch('@Url.Action("NewNote", "Home")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                })
+                const noteId = await response.text()
+
+                window.location.href = `@Url.Action("Note", "Home")/${noteId}`;
+            }
+            catch {
+                alert("ERROR")
+            }
+        });
+
+        $("#deleteNoteButton").click(async function (event) {
+            try {
+
+                if (confirm("Are you sure you want to delete?") == true) {
+                    $("#spinner-div").css('display', 'flex');
+
+                    const noteId = $(this).attr("note-id")
+
+                    const response = await fetch(`@Url.Action("DeleteNote", "Home")/${noteId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                    })
+
+                    window.location.reload();
+                } 
+            }
+            catch {
+                alert("ERROR")
+            }
         });
 
     </script>

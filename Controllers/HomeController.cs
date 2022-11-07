@@ -24,16 +24,50 @@ namespace OnlineNote.Controllers
         }
 
         [SessionChecker]
-        public async Task<IActionResult> Note(int? Id)
+        public async Task<IActionResult> Note(int Id)
         {
             var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
             var account = await homeRepository.GetAccountAsync(accountId);
             ViewBag.AccountId = accountId;
-            Note note = new();
-            if (Id is not null)
-                note = account.Note.First(s => s.Id == Id);
+            Note note = account.Note.First(s => s.Id == Id);
 
             return View(note);
+        }
+
+        [HttpPost]
+        public async Task<int> NewNote()
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                var newNote = new Note();
+                newNote.AccountId = accountId;
+                newNote.Title = "New Note";
+                newNote.Content = "";
+                return await homeRepository.PostNoteAsync(newNote);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [HttpPost]
+        public async Task<bool> DeleteNote(int Id)
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                var account = await homeRepository.GetAccountAsync(accountId);
+                var note = account.Note.FirstOrDefault(s => s.Id == Id);
+                if(note is not null)
+                    return await homeRepository.DeleteNoteAsync(Id);
+                return false;
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public IActionResult Login()
@@ -55,7 +89,7 @@ namespace OnlineNote.Controllers
         }
 
         [HttpPost]
-        public async Task<bool> PostNote([FromBody] Note note)
+        public async Task<int> PostNote([FromBody] Note note)
         {
             try
             {

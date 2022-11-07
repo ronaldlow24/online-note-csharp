@@ -58,7 +58,7 @@ namespace OnlineNote.Repository
             }
         }
 
-        internal async Task<bool> PostNoteAsync(Note note)
+        internal async Task<int> PostNoteAsync(Note note)
         {
             try
             {
@@ -74,6 +74,24 @@ namespace OnlineNote.Repository
                     noteEntity = CustomMapper.MapperObject.Map<NoteEntity>(note);
                     await db.Note.AddAsync(noteEntity);
                 }
+                await db.SaveChangesAsync();
+                return noteEntity.Id;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        internal async Task<bool> DeleteNoteAsync(int id)
+        {
+            try
+            {
+                using var db = new DataContext();
+                var noteEntities = await db.Note.FirstOrDefaultAsync(a => a.Id == id);
+                if (noteEntities is null)
+                    return false;
+                db.Note.Remove(noteEntities);
                 return await db.SaveChangesAsync() > 0;
             }
             catch

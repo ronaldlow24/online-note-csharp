@@ -27,6 +27,8 @@
 
         async function saveNote() {
             try {
+                $("#float-loading").css('display', 'block');
+
                 const accountId = @ViewBag.AccountId
                 const title = $("#title").val()
                 const content = $("#content").val()
@@ -40,7 +42,10 @@
                     },
                     body: JSON.stringify(data)
                 })
+                console.log(response)
                 noteId = await response.text()
+
+                $("#float-loading").css('display', 'none');
             }
             catch {
                 alert("ERROR")
