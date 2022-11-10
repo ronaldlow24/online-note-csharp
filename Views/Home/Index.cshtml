@@ -2,21 +2,27 @@
 
 @await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
-<br />
-<div class="text-center">
-    <button class="btn btn-info" type="button" id="addNewNoteBtn">ADD NOTE +</button>
-</div>
-<br />
-
-@foreach(var item in Model.Note)
-{
-    <div style="display:flex;">
-        <span>@item.Title</span>
-
-        <a href="@Url.Action("Note", "Home")/@item.Id" class="btn btn-outline-primary">EDIT</a>
-        <button class="btn btn-outline-danger deleteNoteButton" note-id="@item.Id" type="button">DELETE</button>
+<div class="container">
+    <br />
+    <div class="text-center">
+        <button class="btn btn-info" type="button" id="addNewNoteBtn">ADD NOTE +</button>
     </div>
-}
+    <br />
+
+    @foreach (var item in Model.Note)
+    {
+        <div class="row">
+            <div class="col d-flex justify-content-center align-items-center gap-4">
+                <span>@item.Title</span>
+                <a href="@Url.Action("Note", "Home")/@item.Id" class="btn btn-outline-primary">EDIT</a>
+                <button class="btn btn-outline-danger deleteNoteButton" note-id="@item.Id" type="button">DELETE</button>
+
+                </div>
+        </div>
+        <br />
+    }
+</div>
+
 
 @section Scripts {
     <script>
@@ -43,9 +49,8 @@
             }
         });
 
-        $("#deleteNoteButton").click(async function (event) {
+        $(".deleteNoteButton").click(async function (event) {
             try {
-
                 if (confirm("Are you sure you want to delete?") == true) {
                     $("#spinner-div").css('display', 'flex');
 
