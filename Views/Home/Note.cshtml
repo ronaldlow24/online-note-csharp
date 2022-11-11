@@ -12,7 +12,22 @@
 
 @section Scripts {
     <script>
-        $('#content').trumbowyg();
+        $('#content').trumbowyg({
+            autogrow: true,
+            btns: [
+                ['undo', 'redo'], // Only supported in Blink browsers
+            ['formatting'],
+            ['strong', 'em', 'del'],
+            ['superscript', 'subscript'],
+                ['link'], ['foreColor', 'backColor'], ['fontsize'],
+            ['insertImage'],
+            ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
+            ['unorderedList', 'orderedList'],
+            ['horizontalRule'],
+            ['removeformat'],
+            ['fullscreen']
+        ]
+        });
 
         let noteId = @Model.Id
 
@@ -57,7 +72,11 @@
         const debouncedKeyPress = debounce(saveNote, 300);
 
 
-        $("#title, #content").on("input", async function (event) {
+        $("#title").on("input", async function (event) {
+            debouncedKeyPress()
+        });
+
+        $("#content").on("tbwchange", async function (event) {
             debouncedKeyPress()
         });
 
