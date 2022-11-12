@@ -6,7 +6,11 @@
     <br />
     <input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title" />
     <br />
-    <textarea type="text" placeholder="Content" class="form-control" id="content" style="height: 65vh;">@Model.Content</textarea>
+    <textarea type="text" placeholder="Content" class="form-control" id="content">@Model.Content</textarea>
+    <br />
+    <br />
+    <br />
+
 </div>
 
 
@@ -15,12 +19,11 @@
         $('#content').trumbowyg({
             autogrow: true,
             btns: [
-                ['undo', 'redo'], // Only supported in Blink browsers
+                ['undo', 'redo'], 
             ['formatting'],
             ['strong', 'em', 'del'],
             ['superscript', 'subscript'],
                 ['link'], ['foreColor', 'backColor'], ['fontsize'],
-            ['insertImage'],
             ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
             ['unorderedList', 'orderedList'],
             ['horizontalRule'],
@@ -30,6 +33,7 @@
         });
 
         let noteId = @Model.Id
+        let noteContentRef = `@Model.Content`
 
         function debounce(callback, limit) {
             console.log(limit)
@@ -44,11 +48,14 @@
 
         async function saveNote() {
             try {
-                $("#float-loading").css('display', 'block');
-
                 const accountId = @ViewBag.AccountId
                 const title = $("#title").val()
                 const content = $("#content").val()
+
+                if (content == noteContentRef)
+                    return
+
+                $("#float-loading").css('display', 'block');
 
                 const data = { Id: noteId, Title: title, Content: content, AccountId: accountId }
                 console.log(data)
@@ -59,12 +66,13 @@
                     },
                     body: JSON.stringify(data)
                 })
-                console.log(response)
                 noteId = await response.text()
+                noteContentRef = content
 
                 $("#float-loading").css('display', 'none');
             }
-            catch {
+            catch(ex) {
+                console.error(ex)
                 alert("ERROR")
             }
         }
