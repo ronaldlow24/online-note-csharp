@@ -2,6 +2,9 @@
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
 using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Controllers
@@ -112,6 +115,63 @@ namespace OnlineNote.Controllers
             catch
             {
                 throw;
+            }
+        }
+
+
+        public async Task NoteWS()
+        {
+            try
+            {
+                if (HttpContext.WebSockets.IsWebSocketRequest)
+                {
+                    using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+                    var buffer = new byte[1024 * 4];
+                    var receiveResult = await webSocket.ReceiveAsync(
+                        new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                    while (!receiveResult.CloseStatus.HasValue)
+                    {
+                        var messageJSON = buffer.ToString()!;
+                        var message = JsonSerializer.Deserialize<NoteWebsocketModel>(messageJSON)!;
+
+                        if(message.Action.ToUpper().Trim() == "LOAD")
+                        {
+                            var noteId = Convert.ToInt32(message.Content);
+                            var note = await homeRepository.GetNoteAsync(noteId);
+                            var noteString = JsonSerializer.Serialize(note);
+                            var noteByte = Encoding.UTF8.GetBytes(noteString);
+                            await webSocket.SendAsync(
+                           new ArraySegment<byte>(noteByte, 0, noteByte.Length),
+                           receiveResult.MessageType,
+                           receiveResult.EndOfMessage,
+                           CancellationToken.None);
+                        }
+
+                        if (message.Action.ToUpper().Trim() == "SAVE")
+                        {
+                            var note = JsonSerializer.Deserialize<Note>(message.Content);
+                            await homeRepository.PostNoteAsync(note);
+                        }
+
+                        receiveResult = await webSocket.ReceiveAsync(
+                            new ArraySegment<byte>(buffer), CancellationToken.None);
+                    }
+
+                    await webSocket.CloseAsync(
+                        receiveResult.CloseStatus.Value,
+                        receiveResult.CloseStatusDescription,
+                        CancellationToken.None);
+                }
+                else
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                }
+            }
+            catch
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             }
         }
     }

@@ -8,4 +8,11 @@
         public int AccountId { get; set; }
 
     }
+
+    public class NoteWebsocketModel
+    {
+        public string Action { get; set; }
+        public string Content { get; set; }
+
+    }
 }

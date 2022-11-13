@@ -58,6 +58,21 @@ namespace OnlineNote.Repository
             }
         }
 
+        internal async Task<Note> GetNoteAsync(int noteId)
+        {
+            try
+            {
+                using var db = new DataContext();
+                var noteEntity = await db.Note.FirstAsync(a => a.Id == noteId);
+                var note = CustomMapper.MapperObject.Map<Note>(noteEntity);
+                return note;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
         internal async Task<int> PostNoteAsync(Note note)
         {
             try

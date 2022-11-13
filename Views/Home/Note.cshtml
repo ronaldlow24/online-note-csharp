@@ -6,7 +6,7 @@
     <br />
     <input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title" />
     <br />
-    <textarea type="text" placeholder="Content" class="form-control" id="content">@Model.Content</textarea>
+    <textarea type="text" placeholder="Content" class="form-control" id="content" style="min-height:65vh;">@Model.Content</textarea>
     <br />
     <br />
     <br />
@@ -16,24 +16,49 @@
 
 @section Scripts {
     <script>
-        $('#content').trumbowyg({
-            autogrow: true,
-            btns: [
-                ['undo', 'redo'], 
-            ['formatting'],
-            ['strong', 'em', 'del'],
-            ['superscript', 'subscript'],
-                ['link'], ['foreColor', 'backColor'], ['fontsize'],
-            ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
-            ['unorderedList', 'orderedList'],
-            ['horizontalRule'],
-            ['removeformat'],
-            ['fullscreen']
+        const SAVE_INTERVAL_MS = 2000
+        const TOOLBAR_OPTIONS = [
+            [{ header: [1, 2, 3, 4, 5, 6, false] }],
+            [{ font: [] }],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["bold", "italic", "underline"],
+            [{ color: [] }, { background: [] }],
+            [{ script: "sub" }, { script: "super" }],
+            [{ align: [] }],
+            ["image", "blockquote", "code-block"],
+            ["clean"],
         ]
+
+
+        const quill = new Quill('#content', {
+            placeholder: 'Enter content here...',
+            theme: 'snow',
+            modules: { toolbar: TOOLBAR_OPTIONS },
         });
 
-        let noteId = @Model.Id
+        const noteId = @Model.Id;
         let noteContentRef = `@Model.Content`
+
+        const socket = new WebSocket(`wss://${window.location.host}@Url.Action("NoteWS", "Home")`);
+
+        socket.addEventListener('open', function (event) {
+
+            const socketData = { Action: "Load", Content: noteId }
+
+            setInterval(function () {
+                socket.send(JSON.stringify(socketData))
+            }, 2000);
+        });
+
+        socket.addEventListener('message', function (event) {
+            console.log(event)
+            //const data = JSON.parse(event.data)
+
+
+            //$("#title").val(data.Title)
+            //quill.setContents(data.Content)
+            //noteContentRef = data.Content
+        });
 
         function debounce(callback, limit) {
             console.log(limit)
@@ -50,7 +75,7 @@
             try {
                 const accountId = @ViewBag.AccountId
                 const title = $("#title").val()
-                const content = $("#content").val()
+                const content = quill.getContents();
 
                 if (content == noteContentRef)
                     return
@@ -58,16 +83,17 @@
                 $("#float-loading").css('display', 'block');
 
                 const data = { Id: noteId, Title: title, Content: content, AccountId: accountId }
-                console.log(data)
-                const response = await fetch('@Url.Action("PostNote", "Home")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
-                noteId = await response.text()
-                noteContentRef = content
+
+                const socketData = { Action: "Save", Content: data }
+                socket.send(socketData)
+
+                //const response = await fetch('@Url.Action("PostNote", "Home")', {
+                //    method: 'POST',
+                //    headers: {
+                //        'Content-Type': 'application/json'
+                //    },
+                //    body: JSON.stringify(data)
+                //})
 
                 $("#float-loading").css('display', 'none');
             }
@@ -79,12 +105,12 @@
 
         const debouncedKeyPress = debounce(saveNote, 300);
 
-
         $("#title").on("input", async function (event) {
             debouncedKeyPress()
         });
 
-        $("#content").on("tbwchange", async function (event) {
+        quill.on('text-change', function(delta, oldDelta, source) {
+            if (source !== "user") return
             debouncedKeyPress()
         });
 
