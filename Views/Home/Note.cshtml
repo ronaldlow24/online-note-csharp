@@ -6,7 +6,7 @@
     <br />
     <input type="text" placeholder="Title" class="form-control" id="title" value="@Model.Title" />
     <br />
-    <textarea type="text" placeholder="Content" class="form-control" id="content" style="min-height:65vh;">@Model.Content</textarea>
+    <div id="content" style="min-height:65vh;"></div>
     <br />
     <br />
     <br />
@@ -16,7 +16,6 @@
 
 @section Scripts {
     <script>
-        const SAVE_INTERVAL_MS = 2000
         const TOOLBAR_OPTIONS = [
             [{ header: [1, 2, 3, 4, 5, 6, false] }],
             [{ font: [] }],
@@ -28,72 +27,93 @@
             ["image", "blockquote", "code-block"],
             ["clean"],
         ]
-
-
         const quill = new Quill('#content', {
             placeholder: 'Enter content here...',
             theme: 'snow',
             modules: { toolbar: TOOLBAR_OPTIONS },
         });
+        quill.setContents(JSON.parse(`@Html.Raw(ViewBag.Content)`.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")))
 
         const noteId = @Model.Id;
-        let noteContentRef = `@Model.Content`
+
+        function isOpen(ws) { return ws.readyState === ws.OPEN }
 
         const socket = new WebSocket(`wss://${window.location.host}@Url.Action("NoteWS", "Home")`);
 
-        socket.addEventListener('open', function (event) {
-
-            const socketData = { Action: "Load", Content: noteId }
-
-            setInterval(function () {
-                socket.send(JSON.stringify(socketData))
-            }, 2000);
-        });
-
         socket.addEventListener('message', function (event) {
-            console.log(event)
-            //const data = JSON.parse(event.data)
+            const data = JSON.parse(event.data)
+            const content = JSON.parse(data.Content)
+            
+            if(data.Action == "RenderTitle")
+                $("#title").val(content.Title)
 
-
-            //$("#title").val(data.Title)
-            //quill.setContents(data.Content)
-            //noteContentRef = data.Content
+            if (data.Action == "RenderContent")
+                quill.updateContents(JSON.parse(content.UpdatedContent))
         });
 
-        function debounce(callback, limit) {
-            console.log(limit)
-            let timeout;
+        let timeoutTitle;
+        function debounceTitle(callback, limit) {
             return () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
+                clearTimeout(timeoutTitle);
+                timeoutTitle = setTimeout(() => {
                     callback();
                 }, limit);
             };
         }
 
-        async function saveNote() {
-            try {
-                const accountId = @ViewBag.AccountId
-                const title = $("#title").val()
-                const content = quill.getContents();
+        let timeoutContent;
+        function debounceContent(callback, limit, para) {
+            return () => {
+                clearTimeout(timeoutContent);
+                timeoutContent = setTimeout(() => {
+                    callback(para);
+                }, limit);
+            };
+        }
 
-                if (content == noteContentRef)
-                    return
+        function saveTitle() {
+            try {
+                console.log("saving title...")
+                const accountId = @ViewBag.AccountId;
+                const title = $("#title").val()
 
                 $("#float-loading").css('display', 'block');
 
-                const data = { Id: noteId, Title: title, Content: content, AccountId: accountId }
+                const data = { Id: noteId, Title: title, AccountId: accountId }
+                const socketData = { Action: "SaveTitle", Content: JSON.stringify(data) }
 
-                const socketData = { Action: "Save", Content: data }
-                socket.send(socketData)
+                if (!isOpen(socket)) {
+                    alert("WEB SOCKET ERROR , PLEASE REFRESH");
+                    return;
+                }
 
-                //const response = await fetch('@Url.Action("PostNote", "Home")', {
-                //    method: 'POST',
-                //    headers: {
-                //        'Content-Type': 'application/json'
-                //    },
-                //    body: JSON.stringify(data)
-                //})
+                socket.send(JSON.stringify(socketData))
+
+                $("#float-loading").css('display', 'none');
+            }
+            catch (ex) {
+                console.error(ex)
+                alert("ERROR")
+            }
+        }
+
+        function saveContent(delta) {
+            try {
+                console.log("saving content...")
+                const accountId = @ViewBag.AccountId;
+                const content = JSON.stringify(quill.getContents());
+
+                $("#float-loading").css('display', 'block');
+
+                const data = { Id: noteId, Content: content, UpdatedContent: JSON.stringify(delta), AccountId: accountId }
+                const socketData = { Action: "SaveContent", Content: JSON.stringify(data) }
+
+                if (!isOpen(socket)) {
+                    alert("WEB SOCKET ERROR , PLEASE REFRESH");
+                    return;
+                }
+
+                socket.send(JSON.stringify(socketData))
 
                 $("#float-loading").css('display', 'none');
             }
@@ -103,15 +123,13 @@
             }
         }
 
-        const debouncedKeyPress = debounce(saveNote, 300);
-
         $("#title").on("input", async function (event) {
-            debouncedKeyPress()
+            debounceTitle(saveTitle, 1000)()
         });
 
         quill.on('text-change', function(delta, oldDelta, source) {
             if (source !== "user") return
-            debouncedKeyPress()
+            debounceContent(saveContent, 600, delta)()
         });
 
     </script>

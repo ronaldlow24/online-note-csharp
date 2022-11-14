@@ -2,6 +2,7 @@
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -12,6 +13,7 @@ namespace OnlineNote.Controllers
     public class HomeController : Controller
     {
         private readonly HomeRepository homeRepository;
+        private ConcurrentDictionary<string, WebSocket> connections = new ConcurrentDictionary<string, WebSocket>();
 
         public HomeController()
         {
@@ -33,10 +35,11 @@ namespace OnlineNote.Controllers
             var account = await homeRepository.GetAccountAsync(accountId);
             ViewBag.AccountId = accountId;
             Note note = account.Note.First(s => s.Id == Id);
-
+            ViewBag.Content = note.Content;
             return View(note);
         }
 
+        [SessionChecker]
         [HttpPost]
         public async Task<int> NewNote()
         {
@@ -55,6 +58,7 @@ namespace OnlineNote.Controllers
             }
         }
 
+        [SessionChecker]
         [HttpPost]
         public async Task<bool> DeleteNote(int Id)
         {
@@ -92,19 +96,6 @@ namespace OnlineNote.Controllers
         }
 
         [HttpPost]
-        public async Task<int> PostNote([FromBody] Note note)
-        {
-            try
-            {
-                return await homeRepository.PostNoteAsync(note);
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        [HttpPost]
         public bool Logout()
         {
             try
@@ -118,7 +109,7 @@ namespace OnlineNote.Controllers
             }
         }
 
-
+        [SessionChecker]
         public async Task NoteWS()
         {
             try
@@ -126,6 +117,23 @@ namespace OnlineNote.Controllers
                 if (HttpContext.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                    string wsID = Guid.NewGuid().ToString();
+
+                    connections.TryAdd(wsID, webSocket);
+                    
+                    //clean connection
+                    var deadConnection = new List<string>();
+                    foreach (var item in connections)
+                    {
+                        if (item.Value.State != WebSocketState.Open)
+                        {
+                            deadConnection.Add(item.Key);
+                        }
+                    }
+                    foreach (var item in deadConnection) 
+                    {
+                        connections.Remove(item, out var temp);
+                    }
 
                     var buffer = new byte[1024 * 4];
                     var receiveResult = await webSocket.ReceiveAsync(
@@ -133,26 +141,67 @@ namespace OnlineNote.Controllers
 
                     while (!receiveResult.CloseStatus.HasValue)
                     {
-                        var messageJSON = buffer.ToString()!;
+                        var messageJSON = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
                         var message = JsonSerializer.Deserialize<NoteWebsocketModel>(messageJSON)!;
 
-                        if(message.Action.ToUpper().Trim() == "LOAD")
-                        {
-                            var noteId = Convert.ToInt32(message.Content);
-                            var note = await homeRepository.GetNoteAsync(noteId);
-                            var noteString = JsonSerializer.Serialize(note);
-                            var noteByte = Encoding.UTF8.GetBytes(noteString);
-                            await webSocket.SendAsync(
-                           new ArraySegment<byte>(noteByte, 0, noteByte.Length),
-                           receiveResult.MessageType,
-                           receiveResult.EndOfMessage,
-                           CancellationToken.None);
-                        }
-
-                        if (message.Action.ToUpper().Trim() == "SAVE")
+                        if (message.Action.ToUpper().Trim() == "SAVETITLE")
                         {
                             var note = JsonSerializer.Deserialize<Note>(message.Content);
-                            await homeRepository.PostNoteAsync(note);
+
+                            await homeRepository.UpdateTitleAsync(note.Id,note.Title);
+
+                            var noteString = JsonSerializer.Serialize(note);
+
+                            var socketData = new NoteWebsocketModel
+                            {
+                                Action = "RenderTitle",
+                                Content = noteString
+                            };
+
+                            var socketDataByte = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(socketData));
+                            foreach (var item in connections) // not working broadcast
+                            {
+                                if (item.Key == wsID)
+                                {
+                                    continue;
+                                }
+
+                                await item.Value.SendAsync(
+                                   new ArraySegment<byte>(socketDataByte, 0, socketDataByte.Length),
+                                   receiveResult.MessageType,
+                                   receiveResult.EndOfMessage,
+                                   CancellationToken.None);
+                            }
+                        }
+
+                        if (message.Action.ToUpper().Trim() == "SAVECONTENT")
+                        {
+                            var note = JsonSerializer.Deserialize<Note>(message.Content);
+
+                            await homeRepository.UpdateContentAsync(note.Id,note.Content);
+
+                            var noteString = JsonSerializer.Serialize(note);
+
+                            var socketData = new NoteWebsocketModel
+                            {
+                                Action = "RenderContent",
+                                Content = noteString
+                            };
+
+                            var socketDataByte = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(socketData));
+                            foreach (var item in connections) // not working broadcast
+                            {
+                                if (item.Key == wsID)
+                                {
+                                    continue;
+                                }
+
+                                await item.Value.SendAsync(
+                                   new ArraySegment<byte>(socketDataByte, 0, socketDataByte.Length),
+                                   receiveResult.MessageType,
+                                   receiveResult.EndOfMessage,
+                                   CancellationToken.None);
+                            }
                         }
 
                         receiveResult = await webSocket.ReceiveAsync(
