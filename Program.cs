@@ -8,6 +8,7 @@ CustomMapper.ConstructMapper();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSignalR();
 
 builder.Services.AddSession(options =>
 {
@@ -16,13 +17,6 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
-
-var webSocketOptions = new WebSocketOptions
-{
-    KeepAliveInterval = TimeSpan.FromMinutes(2)
-};
-
-app.UseWebSockets(webSocketOptions);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -41,8 +35,10 @@ app.UseSession();
 
 
 app.MapControllerRoute(
-
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
+
+app.MapHub<OnlineNote.Controllers.NoteHub>("/noteHub");
 
 app.Run();

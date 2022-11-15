@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
 using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Controllers
@@ -13,7 +11,6 @@ namespace OnlineNote.Controllers
     public class HomeController : Controller
     {
         private readonly HomeRepository homeRepository;
-        private ConcurrentDictionary<string, WebSocket> connections = new ConcurrentDictionary<string, WebSocket>();
 
         public HomeController()
         {
@@ -109,119 +106,44 @@ namespace OnlineNote.Controllers
             }
         }
 
-        [SessionChecker]
-        public async Task NoteWS()
+    }
+
+    public class NoteHub : Hub
+    {
+        private readonly HomeRepository homeRepository;
+
+        public NoteHub()
         {
-            try
-            {
-                if (HttpContext.WebSockets.IsWebSocketRequest)
-                {
-                    using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                    string wsID = Guid.NewGuid().ToString();
+            homeRepository = new HomeRepository();
+        }
 
-                    connections.TryAdd(wsID, webSocket);
-                    
-                    //clean connection
-                    var deadConnection = new List<string>();
-                    foreach (var item in connections)
-                    {
-                        if (item.Value.State != WebSocketState.Open)
-                        {
-                            deadConnection.Add(item.Key);
-                        }
-                    }
-                    foreach (var item in deadConnection) 
-                    {
-                        connections.Remove(item, out var temp);
-                    }
+        [SessionChecker]
+        public async Task AddToGroup(int noteId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, noteId.ToString());
+        }
 
-                    var buffer = new byte[1024 * 4];
-                    var receiveResult = await webSocket.ReceiveAsync(
-                        new ArraySegment<byte>(buffer), CancellationToken.None);
+        [SessionChecker]
+        public async Task RemoveFromGroup(int noteId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, noteId.ToString());
+        }
 
-                    while (!receiveResult.CloseStatus.HasValue)
-                    {
-                        var messageJSON = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
-                        var message = JsonSerializer.Deserialize<NoteWebsocketModel>(messageJSON)!;
+        [SessionChecker]
+        public async Task SaveTitle(int noteId, string title)
+        {
+            await homeRepository.UpdateTitleAsync(noteId, title);
 
-                        if (message.Action.ToUpper().Trim() == "SAVETITLE")
-                        {
-                            var note = JsonSerializer.Deserialize<Note>(message.Content);
+            await Clients.GroupExcept(noteId.ToString(), Context.ConnectionId).SendAsync("RenderTitle", title);
+        }
 
-                            await homeRepository.UpdateTitleAsync(note.Id,note.Title);
+        [SessionChecker]
+        public async Task SaveContent(int noteId, string content, string updatedContent)
+        {
+            await homeRepository.UpdateContentAsync(noteId, content);
 
-                            var noteString = JsonSerializer.Serialize(note);
-
-                            var socketData = new NoteWebsocketModel
-                            {
-                                Action = "RenderTitle",
-                                Content = noteString
-                            };
-
-                            var socketDataByte = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(socketData));
-                            foreach (var item in connections) // not working broadcast
-                            {
-                                if (item.Key == wsID)
-                                {
-                                    continue;
-                                }
-
-                                await item.Value.SendAsync(
-                                   new ArraySegment<byte>(socketDataByte, 0, socketDataByte.Length),
-                                   receiveResult.MessageType,
-                                   receiveResult.EndOfMessage,
-                                   CancellationToken.None);
-                            }
-                        }
-
-                        if (message.Action.ToUpper().Trim() == "SAVECONTENT")
-                        {
-                            var note = JsonSerializer.Deserialize<Note>(message.Content);
-
-                            await homeRepository.UpdateContentAsync(note.Id,note.Content);
-
-                            var noteString = JsonSerializer.Serialize(note);
-
-                            var socketData = new NoteWebsocketModel
-                            {
-                                Action = "RenderContent",
-                                Content = noteString
-                            };
-
-                            var socketDataByte = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(socketData));
-                            foreach (var item in connections) // not working broadcast
-                            {
-                                if (item.Key == wsID)
-                                {
-                                    continue;
-                                }
-
-                                await item.Value.SendAsync(
-                                   new ArraySegment<byte>(socketDataByte, 0, socketDataByte.Length),
-                                   receiveResult.MessageType,
-                                   receiveResult.EndOfMessage,
-                                   CancellationToken.None);
-                            }
-                        }
-
-                        receiveResult = await webSocket.ReceiveAsync(
-                            new ArraySegment<byte>(buffer), CancellationToken.None);
-                    }
-
-                    await webSocket.CloseAsync(
-                        receiveResult.CloseStatus.Value,
-                        receiveResult.CloseStatusDescription,
-                        CancellationToken.None);
-                }
-                else
-                {
-                    HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                }
-            }
-            catch
-            {
-                HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            }
+            await Clients.GroupExcept(noteId.ToString(), Context.ConnectionId).SendAsync("RenderContent", updatedContent);
         }
     }
+
 }
