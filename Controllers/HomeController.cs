@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 using static OnlineNote.Common.Constant;
 
@@ -112,14 +115,25 @@ namespace OnlineNote.Controllers
     {
         private readonly HomeRepository homeRepository;
 
+        internal static ConcurrentDictionary<string, int> ClientConnectionInfo = new ConcurrentDictionary<string, int>();
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            ClientConnectionInfo.TryRemove(Context.ConnectionId, out var temp);
+
+            await base.OnDisconnectedAsync(exception);
+        }
+
         public NoteHub()
         {
             homeRepository = new HomeRepository();
         }
-
+        
         [SessionChecker]
         public async Task AddToGroup(int noteId)
         {
+            ClientConnectionInfo.TryAdd(Context.ConnectionId, noteId);
+
             await Groups.AddToGroupAsync(Context.ConnectionId, noteId.ToString());
         }
 
@@ -143,6 +157,14 @@ namespace OnlineNote.Controllers
             await homeRepository.UpdateContentAsync(noteId, content);
 
             await Clients.GroupExcept(noteId.ToString(), Context.ConnectionId).SendAsync("RenderContent", updatedContent);
+        }
+
+
+        [SessionChecker]
+        public async Task GetConnectionNumber(int noteId)
+        {
+            var temp = ClientConnectionInfo.Count(s => s.Value == noteId);
+            await Clients.Caller.SendAsync("RenderConnectionNumber", temp);
         }
     }
 
