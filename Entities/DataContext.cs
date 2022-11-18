@@ -10,6 +10,7 @@ namespace OnlineNote.Entities
     {
         public DbSet<AccountEntity> Account { get; set; }
         public DbSet<NoteEntity> Note { get; set; }
+        public DbSet<ReminderEntity> Reminder { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

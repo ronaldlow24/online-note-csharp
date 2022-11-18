@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Identity.Client;
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
@@ -14,67 +15,14 @@ namespace OnlineNote.Controllers
     public class HomeController : Controller
     {
         private readonly HomeRepository homeRepository;
+        private readonly NoteRepository noteRepository;
+        private readonly ReminderRepository reminderRepository;
 
         public HomeController()
         {
             homeRepository = new HomeRepository();
-        }
-
-        [SessionChecker]
-        public async Task<IActionResult> Index()
-        {
-            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-            var account = await homeRepository.GetAccountAsync(accountId);
-            return View(account);
-        }
-
-        [SessionChecker]
-        public async Task<IActionResult> Note(int Id)
-        {
-            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-            var account = await homeRepository.GetAccountAsync(accountId);
-            ViewBag.AccountId = accountId;
-            Note note = account.Note.First(s => s.Id == Id);
-            ViewBag.Content = note.Content;
-            return View(note);
-        }
-
-        [SessionChecker]
-        [HttpPost]
-        public async Task<int> NewNote()
-        {
-            try
-            {
-                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-                var newNote = new Note();
-                newNote.AccountId = accountId;
-                newNote.Title = "New Note";
-                newNote.Content = "";
-                return await homeRepository.PostNoteAsync(newNote);
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        [SessionChecker]
-        [HttpPost]
-        public async Task<bool> DeleteNote(int Id)
-        {
-            try
-            {
-                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-                var account = await homeRepository.GetAccountAsync(accountId);
-                var note = account.Note.FirstOrDefault(s => s.Id == Id);
-                if(note is not null)
-                    return await homeRepository.DeleteNoteAsync(Id);
-                return false;
-            }
-            catch
-            {
-                throw;
-            }
+            noteRepository = new NoteRepository();
+            reminderRepository = new ReminderRepository();
         }
 
         public IActionResult Login()
@@ -109,63 +57,97 @@ namespace OnlineNote.Controllers
             }
         }
 
+        [SessionChecker]
+        public async Task<IActionResult> Index()
+        {
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var notes = await noteRepository.GetAllNoteAsync(accountId);
+            return View(notes);
+        }
+
+
+        [SessionChecker]
+        public async Task<IActionResult> Note(int Id)
+        {
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var note = await noteRepository.GetNoteAsync(accountId, Id);
+            ViewBag.AccountId = accountId;
+            ViewBag.Content = note.Content;
+            return View(note);
+        }
+
+        [SessionChecker]
+        [HttpPost]
+        public async Task<int> NewNote()
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                var newNote = new Note();
+                newNote.AccountId = accountId;
+                newNote.Title = "New Note";
+                newNote.Content = "";
+                return await noteRepository.PostNoteAsync(newNote);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [SessionChecker]
+        [HttpPost]
+        public async Task<bool> DeleteNote(int Id)
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                return await noteRepository.DeleteNoteAsync(accountId, Id);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        [SessionChecker]
+        public async Task<IActionResult> Reminder()
+        {
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var reminder = await reminderRepository.GetAllReminderAsync(accountId);
+            return View(reminder);
+        }
+
+        [SessionChecker]
+        [HttpPost]
+        public async Task<Reminder> PostReminder(Reminder model)
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                model.AccountId = accountId;
+                return await reminderRepository.CreateOrUpdateReminderAsync(model);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [SessionChecker]
+        [HttpPost]
+        public async Task<bool> DeleteReminder(int Id)
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                return await reminderRepository.DeleteReminderAsync(accountId, Id);
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
-
-    public class NoteHub : Hub
-    {
-        private readonly HomeRepository homeRepository;
-
-        internal static ConcurrentDictionary<string, int> ClientConnectionInfo = new ConcurrentDictionary<string, int>();
-
-        public override async Task OnDisconnectedAsync(Exception exception)
-        {
-            ClientConnectionInfo.TryRemove(Context.ConnectionId, out var temp);
-
-            await base.OnDisconnectedAsync(exception);
-        }
-
-        public NoteHub()
-        {
-            homeRepository = new HomeRepository();
-        }
-        
-        [SessionChecker]
-        public async Task AddToGroup(int noteId)
-        {
-            ClientConnectionInfo.TryAdd(Context.ConnectionId, noteId);
-
-            await Groups.AddToGroupAsync(Context.ConnectionId, noteId.ToString());
-        }
-
-        [SessionChecker]
-        public async Task RemoveFromGroup(int noteId)
-        {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, noteId.ToString());
-        }
-
-        [SessionChecker]
-        public async Task SaveTitle(int noteId, string title)
-        {
-            await homeRepository.UpdateTitleAsync(noteId, title);
-
-            await Clients.GroupExcept(noteId.ToString(), Context.ConnectionId).SendAsync("RenderTitle", title);
-        }
-
-        [SessionChecker]
-        public async Task SaveContent(int noteId, string content, string updatedContent)
-        {
-            await homeRepository.UpdateContentAsync(noteId, content);
-
-            await Clients.GroupExcept(noteId.ToString(), Context.ConnectionId).SendAsync("RenderContent", updatedContent);
-        }
-
-
-        [SessionChecker]
-        public async Task GetConnectionNumber(int noteId)
-        {
-            var temp = ClientConnectionInfo.Count(s => s.Value == noteId);
-            await Clients.Caller.SendAsync("RenderConnectionNumber", temp);
-        }
-    }
-
 }

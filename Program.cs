@@ -1,4 +1,5 @@
 using OnlineNote.Common;
+using OnlineNote.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-app.MapHub<OnlineNote.Controllers.NoteHub>("/noteHub");
+app.MapHub<NoteHub>("/noteHub");
 
 app.Run();

@@ -1,0 +1,357 @@
+﻿@model List<OnlineNote.Models.Reminder>
+
+@await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
+
+<div class="container">
+    <div class="row mt-3">
+        <div class="col"></div>
+        <div class="col-10 d-flex">
+            <input
+                type="search"
+                id="searchInput"
+                class="form-control"
+                placeholder="Search Reminder Here..."
+            />
+        </div>
+        <div class="col"></div>
+    </div>
+
+    <div id="reminderDIV"></div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade"
+     id="exampleModal"
+     tabindex="-1"
+     aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                    Add A Reminder
+                </h1>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ReminderForm">
+                    <div class="container-fluid">
+                        <div class="row m-3">
+                            <div class="col text-center">
+                                <strong class="fs-4">Title</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <input id="reminderTitle"
+                                       class="form-control"
+                                       placeholder="Enter reminder title here..."
+                                       required />
+                            </div>
+                        </div>
+                        <div class="row m-3">
+                            <div class="col text-center">
+                                <strong class="fs-4">Method</strong>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-6 d-flex flex-column gap-2 align-items-center border-end border-dark">
+                                <h5 class="fst-italic">Timer</h5>
+
+                                <div>
+                                    Hours
+                                    <input type="number"
+                                           class="form-control"
+                                           value="0"
+                                           id="timerHourInput"
+                                           required />
+                                </div>
+
+                                <div>
+                                    Minutes
+                                    <input type="number"
+                                           class="form-control"
+                                           value="0"
+                                           id="timerMinuteInput"
+                                           required />
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-primary mt-auto"
+                                        id="saveReminderButtonTimer">
+                                    Save
+                                </button>
+                            </div>
+                            <div class="col-6 d-flex flex-column gap-2 align-items-center border-start border-dark">
+                                <h5 class="fst-italic">Datetime</h5>
+
+                                <div>
+                                    Choose a date and time
+                                    <input type="datetime-local"
+                                           class="form-control"
+                                           id="datetimeInput"
+                                           required />
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-primary mt-auto"
+                                        id="saveReminderButtonDatetime">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $("#addReminderButton").click(function () {
+            $("#exampleModal").modal("show");
+        });
+
+      
+        async function InsertReminderToDB(title, datetime) {
+            try{
+                let titleTrimmed = title.trim();
+
+                const reminder = {
+                    Title: titleTrimmed,
+                    TargetDatetime: datetime
+                }
+
+                const response = await fetch('@Url.Action("PostReminder", "Home")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reminder)
+                })
+
+                return response;
+            }
+            catch(e){
+                console.error(e)
+                toastr.error(
+                    "Failed to insert reminder to db.",
+                    "Operation Failed!"
+                );
+            }
+        }
+
+
+
+        function AddRowToReminderDIVCore(id, title, datetime) {
+            let tempHTML = `
+                <div class="row mt-5 p-3 border border-dark" data-title="${title.trim().toUpperCase()}">
+                    <div class="col-7 d-flex flex-column justify-content-center align-items-center">${title}<span>(${datetime})</span></div>
+                    <div class="col-5 d-flex justify-content-center align-items-center gap-3">
+                        <button type="button" class="btn btn-outline-danger btn-delete" data-reminder-id="${id}"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            `;
+
+            $("#reminderDIV").append(tempHTML);
+        }
+
+        @foreach(var item in Model)
+        {
+            @:AddRowToReminderDIVCore(@item.Id,`@item.Title`,`@item.TargetDatetime.ToString("dd MMMM yyyy hh:mm:ss tt")`)
+        }
+
+        const ValidateTitleInput = () => {
+            const result =
+                $("#reminderTitle").val() &&
+                $("#reminderTitle").val().trim() != "";
+            if (!result) {
+                toastr.error("Title is missing.", "Error!");
+                $("#reminderTitle").focus();
+            }
+            return result;
+        };
+
+        $('input[Type="Number"]').keypress(function (e) {
+            if ("0123456789".indexOf(e.key) != -1) {
+            } else {
+                e.preventDefault();
+            }
+        });
+
+        $(document).on(
+            "click",
+            "#saveReminderButtonTimer",
+            async function (event) {
+                try{
+                    event.preventDefault();
+
+                    if (!ValidateTitleInput()) return;
+
+                    const titleInput = $("#reminderTitle").val();
+                    const hourInput = $("#timerHourInput").val();
+                    const minuteInput = $("#timerMinuteInput").val();
+
+                    if (hourInput == "") {
+                        toastr.error("Hour is missing.", "Error!");
+                        $("#timerHourInput").focus();
+                        return;
+                    }
+
+                    if (minuteInput == "") {
+                        toastr.error("Minute is missing.", "Error!");
+                        $("#timerMinuteInput").focus();
+                        return;
+                    }
+
+                    const hour = parseInt(hourInput);
+                    const minute = parseInt(minuteInput);
+
+                    if (
+                        hour < 0 ||
+                        minute < 0 ||
+                        (hour === 0 && minute === 0)
+                    ) {
+                        toastr.error(
+                            "Hour/Minute must be more than 0.",
+                            "Error!"
+                        );
+                        return;
+                    }
+
+                    const targetDatetime = moment()
+                        .add(hour, "h")
+                        .add(minute, "m");
+
+                    const insertResult = await InsertReminderToDB(
+                        titleInput,
+                        targetDatetime
+                    );
+
+                    AddRowToReminderDIVCore(
+                        insertResult.Id,
+                        insertResult.Title,
+                        insertResult.TargetDatetime
+                    );
+
+                    $("#exampleModal form").trigger("reset");
+                    $("#exampleModal").modal("hide");
+                }
+                catch(e){
+                    console.error(e)
+                    toastr.error(
+                        "Failed to insert reminder.",
+                        "Operation Failed!"
+                    );
+                }
+            }
+        );
+
+        $(document).on(
+            "click",
+            "#saveReminderButtonDatetime",
+            async function (event) {
+                try{
+                    event.preventDefault();
+
+                    if (!ValidateTitleInput()) return;
+
+                    const titleInput = $("#reminderTitle").val();
+                    const input = $("#datetimeInput").val();
+
+                    if (!input) {
+                        toastr.error("Datetime is missing.", "Error!");
+                        $("#datetimeInput").focus();
+                        return;
+                    }
+
+                    if (new Date(input) <= new Date()) {
+                        toastr.error("Datetime must be in future.", "Error!");
+                        $("#datetimeInput").focus();
+                        return;
+                    }
+
+                    const insertResult = await InsertReminderToDB(
+                        titleInput,
+                        moment(new Date(input))
+                    );
+
+                    AddRowToReminderDIVCore(
+                        insertResult.Id,
+                        insertResult.Title,
+                        insertResult.TargetDatetime
+                    );
+
+                    $("#ReminderForm").trigger("reset");
+                    $("#exampleModal").modal("hide");
+                }
+                catch (e) {
+                    console.error(e)
+                    toastr.error(
+                        "Failed to insert reminder.",
+                        "Operation Failed!"
+                    );
+                }
+            }
+        );
+
+
+        $(document).on("click", ".btn-delete", async function () {
+            try {
+                const reminderId = $(this).attr("data-reminder-id");
+
+                await fetch(`@Url.Action("DeleteReminder", "Home")/${reminderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                })
+
+                $(this).closest("[data-title]").remove()
+
+            } catch (e) {
+                console.error(e)
+                toastr.error(
+                    "Failed to delete reminder.",
+                    "Operation Failed!"
+                );
+            }
+        });
+
+        $("#searchInput").on("input", function () {
+            try{
+                const term = $(this).val().trim().toUpperCase()
+                $("[data-title]").hide()
+
+                if (term == "")
+                    $("[data-title]").show()
+                else
+                    $(`[data-title^="${term}"]`).show()
+            } catch (e) {
+                console.error(e)
+                toastr.error(
+                    "Failed to search for reminder.",
+                    "Operation Failed!"
+                );
+            }
+            
+        })
+
+
+    </script>
+}

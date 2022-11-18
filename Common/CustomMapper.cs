@@ -15,6 +15,7 @@ namespace OnlineNote.Common
             {
                 cfg.CreateMap<AccountEntity, Account>().ReverseMap();
                 cfg.CreateMap<NoteEntity, Note>().ReverseMap();
+                cfg.CreateMap<ReminderEntity, Reminder>().ReverseMap();
             });
 
             MapperObject = configuration.CreateMapper();

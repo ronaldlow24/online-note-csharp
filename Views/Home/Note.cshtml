@@ -117,7 +117,7 @@
 
                 $("#float-loading").css('display', 'block');
 
-                await connection.invoke('SaveTitle', noteId, title)
+                await connection.invoke('SaveTitle', accountId, noteId, title)
 
                 $("#float-loading").css('display', 'none');
             }
@@ -134,7 +134,7 @@
                 const content = JSON.stringify(quill.getContents());
                 const updatedContentArrayString = JSON.stringify(updatedContentArray)
                 $("#float-loading").css('display', 'block');
-                await connection.invoke('SaveContent', noteId, content, updatedContentArrayString)
+                await connection.invoke('SaveContent', accountId, noteId, content, updatedContentArrayString)
 
                 $("#float-loading").css('display', 'none');
             }

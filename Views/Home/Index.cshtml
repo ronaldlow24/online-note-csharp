@@ -1,4 +1,4 @@
-﻿@model OnlineNote.Models.Account
+﻿@model List<OnlineNote.Models.Note>
 
 @await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
@@ -9,7 +9,7 @@
     </div>
     <br />
 
-    @foreach (var item in Model.Note)
+    @foreach (var item in Model)
     {
         <div class="row">
             <div class="col d-flex justify-content-center align-items-center gap-4">

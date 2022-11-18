@@ -7,6 +7,7 @@
         public string SecretPhase { get; set; }
 
         public List<Note> Note { get; set; }
+        public List<Reminder> Reminder { get; set; }
 
     }
 }
