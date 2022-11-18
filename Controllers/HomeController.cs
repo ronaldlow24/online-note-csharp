@@ -1,13 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Identity.Client;
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net.WebSockets;
 using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Controllers
@@ -121,13 +116,14 @@ namespace OnlineNote.Controllers
 
         [SessionChecker]
         [HttpPost]
-        public async Task<Reminder> PostReminder(Reminder model)
+        public async Task<Reminder> PostReminder([FromBody] Reminder model)
         {
             try
             {
                 var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
                 model.AccountId = accountId;
-                return await reminderRepository.CreateOrUpdateReminderAsync(model);
+                var result = await reminderRepository.CreateOrUpdateReminderAsync(model);
+                return result;
             }
             catch
             {

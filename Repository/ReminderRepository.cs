@@ -13,22 +13,8 @@ namespace OnlineNote.Repository
             try
             {
                 using var db = new DataContext();
-                var reminderEntity = await db.Reminder.Where(a => a.AccountId == accountId).ToListAsync();
+                var reminderEntity = await db.Reminder.Where(a => a.AccountId == accountId).AsNoTracking().ToListAsync();
                 return CustomMapper.MapperObject.Map<List<Reminder>>(reminderEntity);
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        internal async Task<Reminder> GetReminderAsync(int accountId, int reminderId)
-        {
-            try
-            {
-                using var db = new DataContext();
-                var reminderEntity = await db.Reminder.FirstAsync(a => a.Id == reminderId && a.AccountId == accountId);
-                return CustomMapper.MapperObject.Map<Reminder>(reminderEntity);
             }
             catch
             {
@@ -48,17 +34,19 @@ namespace OnlineNote.Repository
                 {
                     reminderEntity.Title = model.Title;
                     reminderEntity.TargetDatetime = model.TargetDatetime;
-                    reminderEntity.CreatedDatetime = DateTimeOffset.Now;
+                    reminderEntity.CreatedDatetime = DateTime.UtcNow;
+                    reminderEntity.TimezoneId = model.TimezoneId;
+                    await db.SaveChangesAsync();
                     returnReminder = CustomMapper.MapperObject.Map<Reminder>(reminderEntity);
                 }
                 else
                 {
                     var newEntity = CustomMapper.MapperObject.Map<ReminderEntity>(model);
-                    newEntity.CreatedDatetime = DateTimeOffset.Now;
-                    returnReminder = CustomMapper.MapperObject.Map<Reminder>(newEntity);
+                    newEntity.CreatedDatetime = DateTime.UtcNow;
                     await db.Reminder.AddAsync(newEntity);
+                    await db.SaveChangesAsync();
+                    returnReminder = CustomMapper.MapperObject.Map<Reminder>(newEntity);
                 }
-                await db.SaveChangesAsync();
 
                 return returnReminder;
 

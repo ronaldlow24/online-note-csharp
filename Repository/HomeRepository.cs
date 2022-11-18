@@ -14,19 +14,13 @@ namespace OnlineNote.Repository
             {
                 using var db = new DataContext();
                 var accountEntity = await db.Account.SingleOrDefaultAsync(a => a.Name == account.Name && a.SecretPhase == account.SecretPhase);
-                if(accountEntity is not null)
-                {
-                    account = CustomMapper.MapperObject.Map<Account>(accountEntity);
-                    var noteEntities = await db.Note.Where(a => a.AccountId == accountEntity.Id).AsNoTracking().ToListAsync();
-                    account.Note = CustomMapper.MapperObject.Map<List<Note>>(noteEntities); 
-                }
-                else
+                if (accountEntity is null)
                 {
                     accountEntity = CustomMapper.MapperObject.Map<AccountEntity>(account);
                     await db.Account.AddAsync(accountEntity);
                     await db.SaveChangesAsync();
-                    account = CustomMapper.MapperObject.Map<Account>(accountEntity);
                 }
+                account = CustomMapper.MapperObject.Map<Account>(accountEntity);
 
                 session.Clear();
                 session.SetInt32(SessionString.AccountId, account.Id);

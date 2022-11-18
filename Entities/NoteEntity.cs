@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OnlineNote.Models
 {
     [Table("note")]
     public class NoteEntity
     {
+        [Key]
         [Column("id")]
         public int Id { get; set; }
         [Column("title")]

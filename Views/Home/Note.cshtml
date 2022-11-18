@@ -54,7 +54,10 @@
             modules: { toolbar: TOOLBAR_OPTIONS },
         });
 
-        quill.setContents(JSON.parse(`@Html.Raw(ViewBag.Content)`.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")))
+        @if (!string.IsNullOrWhiteSpace(ViewBag.Content))
+        {
+            @:quill.setContents(JSON.parse(`@Html.Raw(ViewBag.Content)`.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")))
+        }
 
         let connection = new signalR.HubConnectionBuilder()
             .withUrl("/noteHub")

@@ -3,6 +3,12 @@
 @await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
 <div class="container">
+    <br />
+    <div class="text-center">
+        <button class="btn btn-outline-success w-50" type="button" id="addReminderButton">ADD REMINDER +</button>
+    </div>
+    <br />
+
     <div class="row mt-3">
         <div class="col"></div>
         <div class="col-10 d-flex">
@@ -30,7 +36,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="exampleModalLabel">
-                    Add A Reminder
+                    Add A Reminder (<span id="timezone"></span> Timezone)
                 </h1>
                 <button type="button"
                         class="btn-close"
@@ -123,20 +129,19 @@
 
 @section Scripts {
     <script>
+        $("#timezone").html(Intl.DateTimeFormat().resolvedOptions().timeZone)
+
         $("#addReminderButton").click(function () {
             $("#exampleModal").modal("show");
         });
-
       
-        async function InsertReminderToDB(title, datetime) {
+        async function InsertReminderToDB(title, moment_datetime) {
             try{
-                let titleTrimmed = title.trim();
-
                 const reminder = {
-                    Title: titleTrimmed,
-                    TargetDatetime: datetime
+                    Title: title.trim(),
+                    TargetDatetime: moment_datetime.utc().toISOString(),
+                    TimezoneId: Intl.DateTimeFormat().resolvedOptions().timeZone
                 }
-
                 const response = await fetch('@Url.Action("PostReminder", "Home")', {
                     method: 'POST',
                     headers: {
@@ -145,7 +150,9 @@
                     body: JSON.stringify(reminder)
                 })
 
-                return response;
+                const returnData = await response.json();
+
+                return returnData;
             }
             catch(e){
                 console.error(e)
@@ -161,7 +168,7 @@
         function AddRowToReminderDIVCore(id, title, datetime) {
             let tempHTML = `
                 <div class="row mt-5 p-3 border border-dark" data-title="${title.trim().toUpperCase()}">
-                    <div class="col-7 d-flex flex-column justify-content-center align-items-center">${title}<span>(${datetime})</span></div>
+                            <div class="col-7 d-flex flex-column justify-content-center align-items-center">${title}<span>(${datetime} ~ ${Intl.DateTimeFormat().resolvedOptions().timeZone})</span></div>
                     <div class="col-5 d-flex justify-content-center align-items-center gap-3">
                         <button type="button" class="btn btn-outline-danger btn-delete" data-reminder-id="${id}"><i class="fa fa-trash" aria-hidden="true"></i></button>
                     </div>
@@ -173,7 +180,7 @@
 
         @foreach(var item in Model)
         {
-            @:AddRowToReminderDIVCore(@item.Id,`@item.Title`,`@item.TargetDatetime.ToString("dd MMMM yyyy hh:mm:ss tt")`)
+            @:AddRowToReminderDIVCore(@item.Id, `@item.Title`, moment.utc(`@item.TargetDatetime.ToString("s")`).local().format("DD MMMM YYYY hh:mm:ss A"))
         }
 
         const ValidateTitleInput = () => {
@@ -243,10 +250,11 @@
                         targetDatetime
                     );
 
+
                     AddRowToReminderDIVCore(
-                        insertResult.Id,
-                        insertResult.Title,
-                        insertResult.TargetDatetime
+                        insertResult.id,
+                        insertResult.title,
+                        moment.utc(insertResult.targetDatetime).local().format("DD MMMM YYYY hh:mm:ss A")
                     );
 
                     $("#exampleModal form").trigger("reset");
@@ -292,9 +300,9 @@
                     );
 
                     AddRowToReminderDIVCore(
-                        insertResult.Id,
-                        insertResult.Title,
-                        insertResult.TargetDatetime
+                        insertResult.id,
+                        insertResult.title,
+                        moment.utc(insertResult.targetDatetime).local().format("DD MMMM YYYY hh:mm:ss A")
                     );
 
                     $("#ReminderForm").trigger("reset");
