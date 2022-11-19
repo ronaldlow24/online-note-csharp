@@ -22,7 +22,21 @@
         <div class="col"></div>
     </div>
 
-    <div id="reminderDIV"></div>
+    <div id="todayReminderDIV">
+        <div class="row mt-5 p-3">
+            <div class="col-12 d-flex flex-column justify-content-center align-items-center"><h4><i>Today</i></h4></div>
+        </div>
+
+
+    </div>
+
+     <div id="otherReminderDIV">
+        <div class="row mt-5 p-3">
+            <div class="col-12 d-flex flex-column justify-content-center align-items-center"><h4><i>Future</i></h4></div>
+        </div>
+
+
+    </div>
 
 </div>
 
@@ -163,24 +177,37 @@
             }
         }
 
+        function AddRowToReminderDIVCore(id, title, moment_datetime) {
+            const IsToday = moment_datetime.local().isSame(moment(), 'day');
 
+            let datetime = ''
 
-        function AddRowToReminderDIVCore(id, title, datetime) {
+            if (IsToday){
+                datetime = `<h4>${moment_datetime.local().format("hh:mm:ss A")}</h4>`
+            }
+            else{
+                datetime = moment_datetime.local().format("DD MMMM YYYY hh:mm:ss A")
+            }
+
             let tempHTML = `
-                <div class="row mt-5 p-3 border border-dark" data-title="${title.trim().toUpperCase()}">
-                            <div class="col-7 d-flex flex-column justify-content-center align-items-center">${title}<span>(${datetime} ~ ${Intl.DateTimeFormat().resolvedOptions().timeZone})</span></div>
+                <div class="row mt-3 p-3 border border-dark" data-title="${title.trim().toUpperCase()}">
+                            <div class="col-7 d-flex flex-column justify-content-center align-items-center"><h4>${title}</h4><span><strong>${datetime}</strong></span></div>
                     <div class="col-5 d-flex justify-content-center align-items-center gap-3">
                         <button type="button" class="btn btn-outline-danger btn-delete" data-reminder-id="${id}"><i class="fa fa-trash" aria-hidden="true"></i></button>
                     </div>
                 </div>
             `;
 
-            $("#reminderDIV").append(tempHTML);
+            if(IsToday)
+                $("#todayReminderDIV").append(tempHTML);
+            else
+                $("#otherReminderDIV").append(tempHTML);
+
         }
 
         @foreach(var item in Model)
         {
-            @:AddRowToReminderDIVCore(@item.Id, `@item.Title`, moment.utc(`@item.TargetDatetime.ToString("s")`).local().format("DD MMMM YYYY hh:mm:ss A"))
+            @:AddRowToReminderDIVCore(@item.Id, `@item.Title`, moment.utc(`@item.TargetDatetime.ToString("s")`))
         }
 
         const ValidateTitleInput = () => {
@@ -254,7 +281,7 @@
                     AddRowToReminderDIVCore(
                         insertResult.id,
                         insertResult.title,
-                        moment.utc(insertResult.targetDatetime).local().format("DD MMMM YYYY hh:mm:ss A")
+                        moment.utc(insertResult.targetDatetime)
                     );
 
                     $("#exampleModal form").trigger("reset");
@@ -302,7 +329,7 @@
                     AddRowToReminderDIVCore(
                         insertResult.id,
                         insertResult.title,
-                        moment.utc(insertResult.targetDatetime).local().format("DD MMMM YYYY hh:mm:ss A")
+                        moment.utc(insertResult.targetDatetime)
                     );
 
                     $("#ReminderForm").trigger("reset");
