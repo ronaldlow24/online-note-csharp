@@ -181,27 +181,38 @@
             const IsToday = moment_datetime.local().isSame(moment(), 'day');
 
             let datetime = ''
+            let targetDIV = ''
 
             if (IsToday){
                 datetime = `<h4>${moment_datetime.local().format("hh:mm:ss A")}</h4>`
+                targetDIV = 'todayReminderDIV'
             }
             else{
                 datetime = moment_datetime.local().format("DD MMMM YYYY hh:mm:ss A")
+                targetDIV = 'otherReminderDIV'
             }
 
             let tempHTML = `
-                <div class="row mt-3 p-3 border border-dark" data-title="${title.trim().toUpperCase()}">
-                            <div class="col-7 d-flex flex-column justify-content-center align-items-center"><h4>${title}</h4><span><strong>${datetime}</strong></span></div>
+                <div class="row mt-3 p-3 border border-dark" data-title="${title.trim().toUpperCase()}" data-targetdatetime="${moment_datetime.valueOf()}">
+                    <div class="col-7 d-flex flex-column justify-content-center align-items-center"><h4>${title}</h4><span><strong>${datetime}</strong></span></div>
                     <div class="col-5 d-flex justify-content-center align-items-center gap-3">
                         <button type="button" class="btn btn-outline-danger btn-delete" data-reminder-id="${id}"><i class="fa fa-trash" aria-hidden="true"></i></button>
                     </div>
                 </div>
             `;
 
-            if(IsToday)
-                $("#todayReminderDIV").append(tempHTML);
-            else
-                $("#otherReminderDIV").append(tempHTML);
+            const reminderList = $(`#${targetDIV} [data-targetdatetime]`)
+
+            if(reminderList.length === 0)
+                $(`#${targetDIV}`).append(tempHTML);
+            else{
+                for (let i = 0; i < reminderList.length; i++) {
+                    if (parseInt(reminderList.eq(i).attr("data-targetdatetime")) >= moment_datetime.valueOf()) {
+                        reminderList.eq(i).before(tempHTML);
+                        break;
+                    }
+                }
+            }
 
         }
 

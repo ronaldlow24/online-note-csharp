@@ -13,7 +13,7 @@ namespace OnlineNote.Repository
             try
             {
                 using var db = new DataContext();
-                var reminderEntity = await db.Reminder.Where(a => a.AccountId == accountId).AsNoTracking().ToListAsync();
+                var reminderEntity = await db.Reminder.Where(a => a.AccountId == accountId && a.TargetDatetime >= DateTime.UtcNow).AsNoTracking().ToListAsync();
                 return CustomMapper.MapperObject.Map<List<Reminder>>(reminderEntity);
             }
             catch
