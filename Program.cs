@@ -1,13 +1,17 @@
+using Microsoft.EntityFrameworkCore;
 using OnlineNote.Common;
+using OnlineNote.Entities;
 using OnlineNote.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.GetSection("ConnectionStrings").Bind(ApplicationSetting.ConnectionStrings);
+builder.Configuration.GetSection("EmailConfiguration").Bind(ApplicationSetting.EmailConfiguration);
 
 CustomMapper.ConstructMapper();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSignalR();
 
@@ -15,7 +19,7 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.IdleTimeout = Timeout.InfiniteTimeSpan; 
+    options.IdleTimeout = TimeSpan.MaxValue; 
 });
 
 var app = builder.Build();

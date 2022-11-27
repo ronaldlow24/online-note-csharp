@@ -15,7 +15,8 @@ namespace OnlineNote.Models
         
         [Column("secret_phase")]
         public string SecretPhase { get; set; }
+
         [Column("email")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
     }
 }
