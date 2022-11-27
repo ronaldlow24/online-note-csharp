@@ -145,5 +145,17 @@ namespace OnlineNote.Controllers
                 throw;
             }
         }
+
+        public async Task<bool> TriggerReminder()
+        {
+            try
+            {
+                return await reminderRepository.TriggerReminderAsync();
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 }

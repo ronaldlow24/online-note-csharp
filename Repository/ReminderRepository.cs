@@ -71,5 +71,30 @@ namespace OnlineNote.Repository
                 throw;
             }
         }
+
+        internal async Task<bool> TriggerReminderAsync()
+        {
+            try
+            {
+                using var db = new DataContext();
+                var currentDatetime = DateTime.UtcNow;
+                var reminderEntity = await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow && a.IsTriggered == false).ToListAsync();
+                var accountIds = reminderEntity.Select(s => s.AccountId).ToList();
+                var accountData = await db.Account.Where(s => accountIds.Contains(s.Id)).AsNoTracking().Select(s => new {s.Id,s.Email}).ToListAsync();
+
+                Parallel.ForEach(reminderEntity, item =>
+                {
+                    var targetEmail = accountData.First(a => a.Id == item.AccountId).Email;
+                    item.IsTriggered = true;
+                    item.TriggeredDatetime = DateTime.UtcNow;
+                });
+
+                return await db.SaveChangesAsync() > 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 }

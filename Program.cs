@@ -15,6 +15,7 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.IdleTimeout = Timeout.InfiniteTimeSpan; 
 });
 
 var app = builder.Build();

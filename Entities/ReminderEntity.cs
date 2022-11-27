@@ -24,5 +24,12 @@ namespace OnlineNote.Models
 
         [Column("timezone_id")]
         public string TimezoneId { get; set; }
+
+        [Column("is_triggered")]
+        public bool IsTriggered { get; set; }
+
+        [Column("triggered_datetime")]
+        public DateTime? TriggeredDatetime { get; set; }
+
     }
 }
