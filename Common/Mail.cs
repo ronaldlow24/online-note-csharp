@@ -15,7 +15,7 @@ namespace OnlineNote.Common
             EnableSsl = true,
         };
 
-        public static async Task SendMail(string subject, string message, IEnumerable<string> recipients)
+        public static async Task SendMailAsync(string subject, string message, IEnumerable<string> recipients, CancellationToken cancellationToken)
         {
             try
             {
@@ -32,7 +32,28 @@ namespace OnlineNote.Common
                     mailMessage.To.Add(item);
                 }
 
-                await smtpClient.SendMailAsync(mailMessage);
+                await smtpClient.SendMailAsync(mailMessage, cancellationToken);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static async Task SendMailAsync(string subject, string message, string recipient, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(ApplicationSetting.EmailConfiguration.From),
+                    Subject = subject,
+                    Body = message,
+                    IsBodyHtml = true,
+                };
+
+                mailMessage.To.Add(recipient);
+                await smtpClient.SendMailAsync(mailMessage, cancellationToken);
             }
             catch
             {

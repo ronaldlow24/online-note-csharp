@@ -2,6 +2,7 @@
 using OnlineNote.Common;
 using OnlineNote.Entities;
 using OnlineNote.Models;
+using System.Collections.Concurrent;
 
 namespace OnlineNote.Repository
 {
@@ -82,9 +83,17 @@ namespace OnlineNote.Repository
                 var accountIds = reminderEntity.Select(s => s.AccountId).ToList();
                 var accountData = await db.Account.Where(s => accountIds.Contains(s.Id)).AsNoTracking().Select(s => new {s.Id,s.Email}).ToListAsync();
 
-                Parallel.ForEach(reminderEntity, item =>
+                var body = $@" 
+                    <p>This is a reminder.<p>
+                    <p>Please do not reply to this email.<p>
+                ";
+
+                await Parallel.ForEachAsync(reminderEntity, new ParallelOptions(), async (item, token) =>
                 {
                     var targetEmail = accountData.First(a => a.Id == item.AccountId).Email;
+
+                    await Mail.SendMailAsync($"Reminder : {item.Title}", body, targetEmail!, token);
+
                     item.IsTriggered = true;
                     item.TriggeredDatetime = DateTime.UtcNow;
                 });
