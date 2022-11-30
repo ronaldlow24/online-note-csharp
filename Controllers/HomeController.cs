@@ -78,11 +78,7 @@ namespace OnlineNote.Controllers
             try
             {
                 var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-                var newNote = new Note();
-                newNote.AccountId = accountId;
-                newNote.Title = "New Note";
-                newNote.Content = "";
-                return await noteRepository.PostNoteAsync(newNote);
+                return await noteRepository.PostNewNoteAsync(accountId);
             }
             catch
             {

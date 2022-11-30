@@ -92,7 +92,7 @@ namespace OnlineNote.Repository
                 {
                     var targetEmail = accountData.First(a => a.Id == item.AccountId).Email;
 
-                    await Mail.SendMailAsync($"Reminder : {item.Title}", body, targetEmail!, token);
+                    await MailHelper.SendMailAsync($"Reminder : {item.Title}", body, targetEmail!, token);
 
                     item.IsTriggered = true;
                     item.TriggeredDatetime = DateTime.UtcNow;

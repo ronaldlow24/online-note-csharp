@@ -5,7 +5,7 @@ using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 
 namespace OnlineNote.Common
 {
-    public class Mail
+    public class MailHelper
     {
 
         private static readonly SmtpClient smtpClient = new SmtpClient(ApplicationSetting.EmailConfiguration.SmtpServer)
