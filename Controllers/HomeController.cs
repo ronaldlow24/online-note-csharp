@@ -101,25 +101,38 @@ namespace OnlineNote.Controllers
             }
         }
 
+        [SessionChecker]
+        public async Task<List<Reminder>> GetAllReminder()
+        {
+            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+            var reminder = await reminderRepository.GetAllReminderAsync(accountId);
+            return reminder;
+        }
+
 
         [SessionChecker]
         public async Task<IActionResult> Reminder()
         {
-            var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
-            var reminder = await reminderRepository.GetAllReminderAsync(accountId);
-            return View(reminder);
+            ViewBag.Email = HttpContext.Session.GetString(SessionString.AccountEmail) ?? "NONE";
+            return View();
         }
 
         [SessionChecker]
         [HttpPost]
-        public async Task<Reminder> PostReminder([FromBody] Reminder model)
+        public async Task<ResultDataPair<Reminder>> PostReminder([FromBody] Reminder model)
         {
             try
             {
+                var email = HttpContext.Session.GetString(SessionString.AccountEmail);
+                //if(email is null)
+                //{
+                //    return new ResultDataPair<Reminder> { Result = false, CustomData = "Please configure email!" };
+                //}
+
                 var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
                 model.AccountId = accountId;
                 var result = await reminderRepository.CreateOrUpdateReminderAsync(model);
-                return result;
+                return new ResultDataPair<Reminder> { Result = true, Data = result };
             }
             catch
             {
@@ -135,18 +148,6 @@ namespace OnlineNote.Controllers
             {
                 var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
                 return await reminderRepository.DeleteReminderAsync(accountId, Id);
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        public async Task<bool> TriggerReminder()
-        {
-            try
-            {
-                return await reminderRepository.TriggerReminderAsync();
             }
             catch
             {

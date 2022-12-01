@@ -1,8 +1,15 @@
-﻿@model List<OnlineNote.Models.Reminder>
-
+﻿
 @await Html.PartialAsync("~/Views/Shared/_Nav.cshtml")
 
 <div class="container">
+
+    <br />
+    <div class="text-center">
+        <button class="btn btn-outline-primary w-50" type="button" id="configureEmailButton">CONFIGURE EMAIL</button>
+        <br />
+        <small><i>Current Email : </i></small><stong>@ViewBag.Email</stong>
+    </div>
+
     <br />
     <div class="text-center">
         <button class="btn btn-outline-success w-50" type="button" id="addReminderButton">ADD REMINDER +</button>
@@ -148,9 +155,44 @@
         $("#addReminderButton").click(function () {
             $("#exampleModal").modal("show");
         });
-      
+
+        let lastSetTimeoutId = null;
+
+        async function GetAllReminderAndRenderAndStartLoop() {
+            try{
+                const response = await fetch('@Url.Action("GetAllReminder", "Home")')
+                const returnData = await response.json();
+
+                $("[data-title]").remove()
+
+                for (let i = 0; i < returnData.length; i++) {
+                    AddRowToReminderDIVCore(returnData[i].id, returnData[i].title, moment.utc(returnData[i].targetDatetime))
+                }
+
+                lastSetTimeoutId = window.setTimeout(GetAllReminderAndRenderAndStartLoop, 5000);
+
+            }
+            catch(e){
+                toastr.error(
+                    "Failed to get reminder.",
+                    "Operation Failed!"
+                );
+            }
+        }
+
+        (async function () {
+            $("#spinner-div").css('display', 'flex');
+
+            await GetAllReminderAndRenderAndStartLoop();
+
+            $("#spinner-div").hide();
+        })();
+
+
         async function InsertReminderToDB(title, moment_datetime) {
             try{
+                $("#spinner-div").css('display', 'flex');
+
                 const reminder = {
                     Title: title.trim(),
                     TargetDatetime: moment_datetime.utc().toISOString(),
@@ -175,6 +217,28 @@
                     "Operation Failed!"
                 );
             }
+            finally{
+                $("#spinner-div").hide();
+            }
+        }
+
+        function ProcessInsertReminderToDBResult(insertResult) {
+            if (!insertResult.result) {
+                toastr.error(
+                    insertResult.customData,
+                    "Operation Failed!"
+                );
+                return;
+            }
+
+            AddRowToReminderDIVCore(
+                insertResult.data.id,
+                insertResult.data.title,
+                moment.utc(insertResult.data.targetDatetime)
+            );
+
+            $("#ReminderForm").trigger("reset");
+            $("#exampleModal").modal("hide");
         }
 
         function AddRowToReminderDIVCore(id, title, moment_datetime) {
@@ -211,15 +275,15 @@
                         reminderList.eq(i).before(tempHTML);
                         break;
                     }
+
+                    if(i == (reminderList.length - 1))
+                        $(`#${targetDIV}`).append(tempHTML);
                 }
             }
 
         }
 
-        @foreach(var item in Model)
-        {
-            @:AddRowToReminderDIVCore(@item.Id, `@item.Title`, moment.utc(`@item.TargetDatetime.ToString("s")`))
-        }
+     
 
         const ValidateTitleInput = () => {
             const result =
@@ -288,15 +352,7 @@
                         targetDatetime
                     );
 
-
-                    AddRowToReminderDIVCore(
-                        insertResult.id,
-                        insertResult.title,
-                        moment.utc(insertResult.targetDatetime)
-                    );
-
-                    $("#exampleModal form").trigger("reset");
-                    $("#exampleModal").modal("hide");
+                    ProcessInsertReminderToDBResult(insertResult)
                 }
                 catch(e){
                     console.error(e)
@@ -337,14 +393,7 @@
                         moment(new Date(input))
                     );
 
-                    AddRowToReminderDIVCore(
-                        insertResult.id,
-                        insertResult.title,
-                        moment.utc(insertResult.targetDatetime)
-                    );
-
-                    $("#ReminderForm").trigger("reset");
-                    $("#exampleModal").modal("hide");
+                    ProcessInsertReminderToDBResult(insertResult)
                 }
                 catch (e) {
                     console.error(e)
@@ -359,6 +408,8 @@
 
         $(document).on("click", ".btn-delete", async function () {
             try {
+                $("#spinner-div").css('display', 'flex');
+
                 const reminderId = $(this).attr("data-reminder-id");
 
                 await fetch(`@Url.Action("DeleteReminder", "Home")/${reminderId}`, {
@@ -370,12 +421,16 @@
 
                 $(this).closest("[data-title]").remove()
 
-            } catch (e) {
+            } 
+            catch (e) {
                 console.error(e)
                 toastr.error(
                     "Failed to delete reminder.",
                     "Operation Failed!"
                 );
+            }
+            finally {
+                $("#spinner-div").hide();
             }
         });
 

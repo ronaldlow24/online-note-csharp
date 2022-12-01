@@ -1,7 +1,6 @@
 ﻿using System.Net.Mail;
 using System.Net;
 using static OnlineNote.Common.Constant;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 
 namespace OnlineNote.Common
 {
@@ -15,7 +14,7 @@ namespace OnlineNote.Common
             EnableSsl = true,
         };
 
-        public static async Task SendMailAsync(string subject, string message, IEnumerable<string> recipients, CancellationToken cancellationToken)
+        public static async Task SendMailAsync(string subject, string message, IEnumerable<string> recipients, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -40,7 +39,7 @@ namespace OnlineNote.Common
             }
         }
 
-        public static async Task SendMailAsync(string subject, string message, string recipient, CancellationToken cancellationToken)
+        public static async Task SendMailAsync(string subject, string message, string recipient, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -53,7 +52,7 @@ namespace OnlineNote.Common
                 };
 
                 mailMessage.To.Add(recipient);
-                await smtpClient.SendMailAsync(mailMessage, cancellationToken);
+                await smtpClient.SendMailAsync(mailMessage);
             }
             catch
             {

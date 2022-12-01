@@ -83,20 +83,23 @@ namespace OnlineNote.Repository
                 var accountIds = reminderEntity.Select(s => s.AccountId).ToList();
                 var accountData = await db.Account.Where(s => accountIds.Contains(s.Id)).AsNoTracking().Select(s => new {s.Id,s.Email}).ToListAsync();
 
-                var body = $@" 
-                    <p>This is a reminder.<p>
-                    <p>Please do not reply to this email.<p>
-                ";
-
                 await Parallel.ForEachAsync(reminderEntity, new ParallelOptions(), async (item, token) =>
                 {
                     var targetEmail = accountData.First(a => a.Id == item.AccountId).Email;
+
+                    var body = $@" 
+                        <p>This is a reminder for:<p>
+                        <p><i><strong>{item.Title}</strong></i><p>
+                        <p>Please do not reply to this email.<p>
+                    ";
 
                     await MailHelper.SendMailAsync($"Reminder : {item.Title}", body, targetEmail!, token);
 
                     item.IsTriggered = true;
                     item.TriggeredDatetime = DateTime.UtcNow;
                 });
+
+                await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow.AddDays(-5) && a.IsTriggered == true).ExecuteDeleteAsync();
 
                 return await db.SaveChangesAsync() > 0;
             }

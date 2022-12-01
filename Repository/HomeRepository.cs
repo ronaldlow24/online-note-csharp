@@ -25,6 +25,7 @@ namespace OnlineNote.Repository
                 session.Clear();
                 session.SetInt32(SessionString.AccountId, account.Id);
                 session.SetString(SessionString.AccountName, account.Name);
+                session.SetString(SessionString.AccountEmail, account.Email);
                 await session.CommitAsync();
                 return account;
             }
