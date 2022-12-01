@@ -52,7 +52,7 @@ namespace OnlineNote.Common
                 };
 
                 mailMessage.To.Add(recipient);
-                await smtpClient.SendMailAsync(mailMessage);
+                await smtpClient.SendMailAsync(mailMessage, cancellationToken);
             }
             catch
             {
