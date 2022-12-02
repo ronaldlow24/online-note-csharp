@@ -11,4 +11,10 @@
         public List<Reminder> Reminder { get; set; }
 
     }
+
+    public class EmailInputModel 
+    { 
+        public string Email { get; set; }
+    }
+
 }

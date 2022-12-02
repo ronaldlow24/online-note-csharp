@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OnlineNote.Common;
 using OnlineNote.Models;
 using OnlineNote.Repository;
+using System.Dynamic;
 using static OnlineNote.Common.Constant;
 
 namespace OnlineNote.Controllers
@@ -113,7 +114,7 @@ namespace OnlineNote.Controllers
         [SessionChecker]
         public async Task<IActionResult> Reminder()
         {
-            ViewBag.Email = HttpContext.Session.GetString(SessionString.AccountEmail) ?? "NONE";
+            ViewBag.Email = HttpContext.Session.GetString(SessionString.AccountEmail);
             return View();
         }
 
@@ -148,6 +149,21 @@ namespace OnlineNote.Controllers
             {
                 var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
                 return await reminderRepository.DeleteReminderAsync(accountId, Id);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [SessionChecker]
+        [HttpPost]
+        public async Task<ResultDataPairBase> UpdateEmail([FromBody] EmailInputModel model)
+        {
+            try
+            {
+                var accountId = HttpContext.Session.GetInt32(SessionString.AccountId)!.Value;
+                return await homeRepository.UpdateEmailAsync(accountId, model.Email, HttpContext.Session);
             }
             catch
             {

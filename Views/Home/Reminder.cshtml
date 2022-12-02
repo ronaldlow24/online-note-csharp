@@ -7,7 +7,7 @@
     <div class="text-center">
         <button class="btn btn-outline-primary w-50" type="button" id="configureEmailButton">CONFIGURE EMAIL</button>
         <br />
-        <small><i>Current Email : </i></small><stong>@ViewBag.Email</stong>
+        <small><i>Current Email : </i></small><stong>@(ViewBag.Email ?? "NONE")</stong>
     </div>
 
     <br />
@@ -47,16 +47,16 @@
 
 </div>
 
-<!-- Modal -->
+<!-- Reminder Modal -->
 <div class="modal fade"
-     id="exampleModal"
+     id="reminderModal"
      tabindex="-1"
-     aria-labelledby="exampleModalLabel"
+     aria-labelledby="reminderModalLabel"
      aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                <h1 class="modal-title fs-5" id="reminderModalLabel">
                     Add A Reminder (<span id="timezone"></span> Timezone)
                 </h1>
                 <button type="button"
@@ -65,8 +65,7 @@
                         aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="ReminderForm">
-                    <div class="container-fluid">
+                <div class="container-fluid">
                         <div class="row m-3">
                             <div class="col text-center">
                                 <strong class="fs-4">Title</strong>
@@ -133,7 +132,6 @@
                             </div>
                         </div>
                     </div>
-                </form>
             </div>
             <div class="modal-footer">
                 <button type="button"
@@ -146,6 +144,58 @@
     </div>
 </div>
 
+<!-- Email Modal -->
+<div class="modal fade"
+     id="emailModal"
+     tabindex="-1"
+     aria-labelledby="emailModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="emailModalLabel">
+                    Update Email
+                </h1>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                        <div class="row m-3">
+                            <div class="col text-center">
+                                <strong class="fs-4">Email</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <input id="emailInput"
+                                       class="form-control"
+                                       placeholder="Enter email here..."
+                                       required />
+                            </div>
+                        </div>
+
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                    id="submitEmailButton"
+                        class="btn btn-primary"
+                        >
+                    Submit
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 @section Scripts {
@@ -153,7 +203,12 @@
         $("#timezone").html(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
         $("#addReminderButton").click(function () {
-            $("#exampleModal").modal("show");
+            $("#reminderModal").modal("show");
+        });
+
+        $("#configureEmailButton").click(function () {
+            $("#emailInput").val("@ViewBag.Email")
+            $("#emailModal").modal("show");
         });
 
         let lastSetTimeoutId = null;
@@ -238,7 +293,7 @@
             );
 
             $("#ReminderForm").trigger("reset");
-            $("#exampleModal").modal("hide");
+            $("#reminderModal").modal("hide");
         }
 
         function AddRowToReminderDIVCore(id, title, moment_datetime) {
@@ -401,6 +456,60 @@
                         "Failed to insert reminder.",
                         "Operation Failed!"
                     );
+                }
+            }
+        );
+
+        $(document).on(
+            "click",
+            "#submitEmailButton",
+            async function (event) {
+                try {
+                    $("#spinner-div").css('display', 'flex');
+
+                    event.preventDefault();
+
+                    const email = $("#emailInput").val();
+
+                    if (!email || email.trim() == "") {
+                        toastr.error("Email is missing.", "Error!");
+                        $("#emailInput").focus();
+                        return;
+                    }
+
+                    const body = {
+                        Email: email,
+                    }
+
+                    const response = await fetch('@Url.Action("UpdateEmail", "Home")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    })
+
+                    const returnData = await response.json();
+
+                    if (!returnData.result) {
+                        toastr.error(
+                            returnData.customData,
+                            "Operation Failed!"
+                        );
+                        return;
+                    }
+
+                    location.reload();
+                }
+                catch (e) {
+                    console.error(e)
+                    toastr.error(
+                        "Failed to update email.",
+                        "Operation Failed!"
+                    );
+                }
+                finally {
+                    $("#spinner-div").hide();
                 }
             }
         );

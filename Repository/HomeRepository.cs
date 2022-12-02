@@ -50,5 +50,28 @@ namespace OnlineNote.Repository
             }
         }
 
+        internal async Task<ResultDataPairBase> UpdateEmailAsync(int accountId, string email, ISession session)
+        {
+            try
+            {
+                using var db = new DataContext();
+                var accountEntity = await db.Account.FirstAsync(a => a.Id == accountId);
+
+                var isEmailValid = MailHelper.IsValidEmail(email);
+                if(!isEmailValid)
+                    return new ResultDataPairBase { Result = false,CustomData="Email is not valid!" };
+
+
+                accountEntity.Email = email;
+                await db.SaveChangesAsync();
+                session.SetString(SessionString.AccountEmail, email);
+
+                return new ResultDataPairBase { Result = true };
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 }
