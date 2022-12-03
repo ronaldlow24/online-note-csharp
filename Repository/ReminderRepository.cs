@@ -2,7 +2,6 @@
 using OnlineNote.Common;
 using OnlineNote.Entities;
 using OnlineNote.Models;
-using System.Collections.Concurrent;
 
 namespace OnlineNote.Repository
 {
@@ -80,28 +79,40 @@ namespace OnlineNote.Repository
                 using var db = new DataContext();
                 var currentDatetime = DateTime.UtcNow;
                 var reminderEntity = await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow && a.IsTriggered == false).ToListAsync();
-                var accountIds = reminderEntity.Select(s => s.AccountId).ToList();
+                var accountIds = reminderEntity.Select(s => s.AccountId).Distinct().ToList();
                 var accountData = await db.Account.Where(s => accountIds.Contains(s.Id)).AsNoTracking().Select(s => new {s.Id,s.Email}).ToListAsync();
 
                 await Parallel.ForEachAsync(reminderEntity, new ParallelOptions(), async (item, token) =>
                 {
-                    var targetEmail = accountData.First(a => a.Id == item.AccountId).Email;
+                    var targetEmail = accountData.FirstOrDefault(a => a.Id == item.AccountId)?.Email;
+
+                    if (targetEmail is null)
+                        return;
+
+                    TimeZoneInfo tzi = TimeZoneInfo.FindSystemTimeZoneById(item.TimezoneId);
+
+                    var localDatetimeString = TimeZoneInfo.ConvertTimeFromUtc(item.TargetDatetime, tzi).ToString("yyyy-MM-dd HH:mm:ss");
 
                     var body = $@" 
                         <p>This is a reminder for:<p>
                         <p><i><strong>{item.Title}</strong></i><p>
+                        <p><i><strong>{localDatetimeString} ({item.TimezoneId})</strong></i><p>
                         <p>Please do not reply to this email.<p>
                     ";
 
-                    await MailHelper.SendMailAsync($"Reminder : {item.Title}", body, targetEmail!, token);
+                    var subject = $"Reminder : {item.Title} ({localDatetimeString})";
+
+                    await MailHelper.SendMailAsync(subject, body, targetEmail!, token);
 
                     item.IsTriggered = true;
                     item.TriggeredDatetime = DateTime.UtcNow;
                 });
 
-                await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow.AddDays(-5) && a.IsTriggered == true).ExecuteDeleteAsync();
+                var result = await db.SaveChangesAsync();
 
-                return await db.SaveChangesAsync() > 0;
+                await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow.AddDays(-2) && a.IsTriggered == true).ExecuteDeleteAsync();
+
+                return result > 0;
             }
             catch
             {

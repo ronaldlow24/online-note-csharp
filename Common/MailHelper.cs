@@ -9,13 +9,6 @@ namespace OnlineNote.Common
     public class MailHelper
     {
 
-        private static readonly SmtpClient smtpClient = new SmtpClient(ApplicationSetting.EmailConfiguration.SmtpServer)
-        {
-            Port = ApplicationSetting.EmailConfiguration.Port,
-            Credentials = new NetworkCredential(ApplicationSetting.EmailConfiguration.UserName, ApplicationSetting.EmailConfiguration.Password),
-            EnableSsl = true,
-        };
-
         public static bool IsValidEmail(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -60,10 +53,22 @@ namespace OnlineNote.Common
             }
         }
 
+        public static async Task SendMailAsync(string subject, string message, string recipient, CancellationToken cancellationToken = default)
+        {
+            await SendMailAsync(subject,message,new List<string> { recipient },cancellationToken);
+        }
+    
         public static async Task SendMailAsync(string subject, string message, IEnumerable<string> recipients, CancellationToken cancellationToken = default)
         {
             try
             {
+                using var smtpClient = new SmtpClient(ApplicationSetting.EmailConfiguration.SmtpServer)
+                {
+                    Port = ApplicationSetting.EmailConfiguration.Port,
+                    Credentials = new NetworkCredential(ApplicationSetting.EmailConfiguration.UserName, ApplicationSetting.EmailConfiguration.Password),
+                    EnableSsl = true,
+                };
+
                 var mailMessage = new MailMessage
                 {
                     From = new MailAddress(ApplicationSetting.EmailConfiguration.From),
@@ -78,32 +83,24 @@ namespace OnlineNote.Common
                 }
 
                 await smtpClient.SendMailAsync(mailMessage, cancellationToken);
+
+                return true;
             }
-            catch
+            catch (Exception e)
             {
                 throw;
             }
         }
 
-        public static async Task SendMailAsync(string subject, string message, string recipient, CancellationToken cancellationToken = default)
+        public static async Task SendErrorMailAsync(Exception ex)
         {
-            try
-            {
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(ApplicationSetting.EmailConfiguration.From),
-                    Subject = subject,
-                    Body = message,
-                    IsBodyHtml = true,
-                };
+            var targetList = new List<string>() { "ron556611@gmail.com" };
+            var body = $@"
 
-                mailMessage.To.Add(recipient);
-                await smtpClient.SendMailAsync(mailMessage, cancellationToken);
-            }
-            catch
-            {
-                throw;
-            }
+
+            ";
+
+            await SendMailAsync("Online Note Error", body, targetList);
         }
     }
 }

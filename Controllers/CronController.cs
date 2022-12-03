@@ -24,7 +24,7 @@ namespace OnlineNote.Controllers
             }
             catch
             {
-                throw;
+                return false;
             }
         }
     }
