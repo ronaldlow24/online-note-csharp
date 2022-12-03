@@ -83,8 +83,6 @@ namespace OnlineNote.Common
                 }
 
                 await smtpClient.SendMailAsync(mailMessage, cancellationToken);
-
-                return true;
             }
             catch (Exception e)
             {
