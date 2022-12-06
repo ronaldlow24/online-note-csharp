@@ -66,72 +66,71 @@
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
-                        <div class="row m-3">
-                            <div class="col text-center">
-                                <strong class="fs-4">Title</strong>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col">
-                                <input id="reminderTitle"
-                                       class="form-control"
-                                       placeholder="Enter reminder title here..."
-                                       required />
-                            </div>
-                        </div>
-                        <div class="row m-3">
-                            <div class="col text-center">
-                                <strong class="fs-4">Method</strong>
-                            </div>
-                        </div>
-
-                        <div class="row mt-3">
-                            <div class="col-6 d-flex flex-column gap-2 align-items-center border-end border-dark">
-                                <h5 class="fst-italic">Timer</h5>
-
-                                <div>
-                                    Hours
-                                    <input type="number"
-                                           class="form-control"
-                                           value="0"
-                                           id="timerHourInput"
-                                           required />
-                                </div>
-
-                                <div>
-                                    Minutes
-                                    <input type="number"
-                                           class="form-control"
-                                           value="0"
-                                           id="timerMinuteInput"
-                                           required />
-                                </div>
-
-                                <button type="button"
-                                        class="btn btn-primary mt-auto"
-                                        id="saveReminderButtonTimer">
-                                    Save
-                                </button>
-                            </div>
-                            <div class="col-6 d-flex flex-column gap-2 align-items-center border-start border-dark">
-                                <h5 class="fst-italic">Datetime</h5>
-
-                                <div>
-                                    Choose a date and time
-                                    <input type="datetime-local"
-                                           class="form-control"
-                                           id="datetimeInput"
-                                           required />
-                                </div>
-
-                                <button type="button"
-                                        class="btn btn-primary mt-auto"
-                                        id="saveReminderButtonDatetime">
-                                    Save
-                                </button>
-                            </div>
+                    <div class="row m-3">
+                        <div class="col text-center">
+                            <strong class="fs-4">Title</strong>
                         </div>
                     </div>
+                    <div class="row m-3">
+                        <div class="col">
+                            <input id="reminderTitle"
+                                    class="form-control"
+                                    placeholder="Enter reminder title here..."
+                                    required />
+                        </div>
+                    </div>
+                    <div class="row m-3">
+                        <div class="col text-center">
+                            <strong class="fs-4">Method (Choose 1)</strong>
+                        </div>
+                    </div>
+                    <div class="row m-3">
+                        <div class="col-xl-6 m-3 m-xl-0 d-flex flex-column gap-2 align-items-center">
+                            <h5 class="fst-italic">Timer</h5>
+
+                            <div>
+                                Hours
+                                <input type="number"
+                                        class="form-control"
+                                        value="0"
+                                        id="timerHourInput"
+                                        required />
+                            </div>
+
+                            <div>
+                                Minutes
+                                <input type="number"
+                                        class="form-control"
+                                        value="0"
+                                        id="timerMinuteInput"
+                                        required />
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-primary mt-auto"
+                                    id="saveReminderButtonTimer">
+                                Save
+                            </button>
+                        </div>
+                        <div class="col-xl-6 m-3 m-xl-0 d-flex flex-column gap-2 align-items-center">
+                            <h5 class="fst-italic">Datetime</h5>
+
+                            <div>
+                                Choose a date and time
+                                <input type="datetime-local"
+                                        class="form-control"
+                                        id="datetimeInput"
+                                        required />
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-primary mt-auto"
+                                    id="saveReminderButtonDatetime">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button"

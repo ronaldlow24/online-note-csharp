@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using OnlineNote.Common;
+using OnlineNote.Cron;
 using OnlineNote.Entities;
 using OnlineNote.Hubs;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,27 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.IdleTimeout = TimeSpan.MaxValue; 
 });
+
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
+    // Just use the name of your job that you created in the Jobs folder.
+    var jobKey = new JobKey("TriggerReminderCronJob");
+    q.AddJob<TriggerReminderCronJob>(opts => opts.WithIdentity(jobKey));
+
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("TriggerReminderCronJob-trigger")
+        .WithCronSchedule("0/30 * * * * ? *")
+    );
+});
+
+// Quartz.Extensions.Hosting hosting
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
+
 
 var app = builder.Build();
 

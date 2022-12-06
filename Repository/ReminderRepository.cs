@@ -77,8 +77,7 @@ namespace OnlineNote.Repository
             try
             {
                 using var db = new DataContext();
-                var currentDatetime = DateTime.UtcNow;
-                var reminderEntity = await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow && a.IsTriggered == false).ToListAsync();
+                var reminderEntity = await db.Reminder.Where(a => a.TargetDatetime <= DateTime.UtcNow.AddMinutes(1) && a.IsTriggered == false).ToListAsync();
                 var accountIds = reminderEntity.Select(s => s.AccountId).Distinct().ToList();
                 var accountData = await db.Account.Where(s => accountIds.Contains(s.Id)).AsNoTracking().Select(s => new {s.Id,s.Email}).ToListAsync();
 
